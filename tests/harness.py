@@ -28,6 +28,7 @@ LOADOUT_BASE = 0x31000000
 
 MOCK = r"""
 DRAW, WORLDS, KEYS, CURSOR, MOUSE_DOWN, WHEEL = {}, { {}, {} }, {}, { 0, 0 }, false, 0
+GUIS = {}
 RES_W, RES_H = 1920, 1080
 local function callable(fields, make)
     return setmetatable(fields, { __call = function(_, ...) return make(...) end })
@@ -38,8 +39,17 @@ stingray = {
     Color = function(a, r, g, b) return { a, r, g, b } end,
     Gui = {
         resolution = function() return RES_W, RES_H end,
-        rect = function(g, p, s, c) DRAW[#DRAW + 1] = { 'rect', p[1], p[2], p[3], s[1], s[2], c[1], c[2], c[3], c[4] } end,
-        text = function(g, t, f, size, m, p, c) DRAW[#DRAW + 1] = { 'text', p[1], p[2], p[3], size, t, c[1], c[2], c[3], c[4] } end,
+        -- each gui keeps its own draw calls (the panel and the mascot are two guis, like in the game)
+        rect = function(g, p, s, c)
+            local d = { 'rect', p[1], p[2], p[3], s[1], s[2], c[1], c[2], c[3], c[4] }
+            DRAW[#DRAW + 1] = d
+            if type(g) == 'table' and g.items then g.items[#g.items + 1] = d end
+        end,
+        text = function(g, t, f, size, m, p, c)
+            local d = { 'text', p[1], p[2], p[3], size, t, c[1], c[2], c[3], c[4] }
+            DRAW[#DRAW + 1] = d
+            if type(g) == 'table' and g.items then g.items[#g.items + 1] = d end
+        end,
         -- a Chinese character is about one em wide; ASCII about half
         text_extents = function(g, t, f, size)
             local wide = select(2, t:gsub('[\194-\244]', ''))
@@ -49,7 +59,13 @@ stingray = {
         material = function() return {} end,
     },
     Material = { set_texture = function() end },
-    World = { create_screen_gui = function(w) DRAW = {}; return {} end, destroy_gui = function() DRAW = {} end },
+    World = {
+        create_screen_gui = function(w) local g = { items = {} }; GUIS[#GUIS + 1] = g; return g end,
+        destroy_gui = function(w, g)
+            for i = #GUIS, 1, -1 do if GUIS[i] == g then table.remove(GUIS, i) end end
+            DRAW = {}
+            for _, x in ipairs(GUIS) do for _, d in ipairs(x.items) do DRAW[#DRAW + 1] = d end end
+        end },
     Application = { worlds = function() return WORLDS end, main_world = function() return WORLDS[1] end,
                     can_get = function() return true end },
     IdString64 = { from_hex = function(s) return s end },
@@ -92,15 +108,20 @@ PP_TEST_INPUT = {
     -- the window filter, as tools/window_filter.py's code treats messages (that code itself
     -- is run on an x64 emulator in tests/test_window_filter.py)
     filter_install = function(w) if FILTER_FAIL then return nil, 'test' end; FILTER = FILTER or { flag = 0, wheel = 0, keys = 0, buttons = 0 }; return FILTER end,
-    filter_set = function(on) if FILTER then FILTER.flag = on and 1 or 0 end end,
+    filter_set = function(on, raw) if FILTER then FILTER.flag = on and 1 or 0; FILTER.raw = (on and raw) and true or false end end,
+    filter_raw_ok = function() return FILTER ~= nil and not FILTER_NO_RAW end,
     filter_wheel = function() return FILTER and FILTER.wheel or 0 end,
-    filter_stats = function() if FILTER then return FILTER.keys, FILTER.buttons end return 0, 0 end,
+    filter_stats = function() if FILTER then return FILTER.keys, FILTER.buttons, FILTER.rawdrop or 0 end return 0, 0, 0 end,
 }
 RAW = { { page = 1, usage = 2, flags = 0x30, target = 'game window' }, { page = 1, usage = 6, flags = 0x30, target = 'game window' } }
-RAW_CALLS, RAW_FAIL_GIVE, RAW_OTHER_THREAD, FILTER, FILTER_FAIL = 0, false, false, nil, false
+RAW_CALLS, RAW_FAIL_GIVE, RAW_OTHER_THREAD, FILTER, FILTER_FAIL, FILTER_NO_RAW = 0, false, false, nil, false, false
 GAME_GOT = {}
 function GAME_HELD()
-    for _, d in ipairs(RAW) do if d.usage == 2 then return false end end
+    -- 6.3: a mouse registration the panel could not take back (another thread) is still held
+    -- when the window filter drops its WM_INPUT
+    for _, d in ipairs(RAW) do
+        if d.usage == 2 and not (RAW_OTHER_THREAD and FILTER and FILTER.flag == 1 and FILTER.raw) then return false end
+    end
     return true
 end
 -- a window message to the game window: a key press, a click or a wheel notch

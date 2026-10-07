@@ -29,7 +29,7 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 - **Requires:** [Bingus Shared Loader](https://ayakamods.com/mods/bingus-shared-loader.3861/)
 - **Single-player / private lobbies only.** Don't use it in public matchmaking.
 - Download: [AyakaMods](https://ayakamods.com/mods/super-earth-armory-forge.4359/) · [GitHub Releases](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest) (full edition) · [Nexus Mods: Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789) (Passive Swap edition)
-- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v6.2.1.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v6.2.1.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
+- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v6.3.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v6.3.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
 - **Support:** the mod is free and always will be. If it's worth a coffee to you, **[tip on Ko-fi](https://ko-fi.com/phamtrangiahung)**. I'd really appreciate it, and it helps me keep updating the mod.
 
 ## Ways to use it
@@ -87,6 +87,8 @@ Then:
 - **Controller:** **Back + Start** opens the panel. D-pad / left stick moves, **A** selects, **B** goes back, **LB / RB** switch tabs, **X** undoes, **Y** ticks, right stick scrolls.
 - **Search:** **Ctrl+F** (or click the field above a list) and type part of a passive's name or effect, e.g. `reload`. Esc clears it.
 - **Language:** English or 简体中文 on the Keys tab ([Languages](#languages)).
+- **Mascot:** a little robot in the top-left box follows your cursor; click it to boop it. Keys tab → Mascot turns it off.
+- **Edit `loadout.ini` while playing:** save the file and the mod reloads it within a couple of seconds (what it no longer lists goes back to the game's values; Undo works).
 - **Keys tab:** pick the panel key (F1–F12) and the quick-swap key (F1–F12 or off). Also `hotkey = F7` / `swap_hotkey = F9` in `[settings]`. A bad key there falls back to F7 / F9, so the panel always opens. SHODAN Stat Editor uses F8, and its panel sits on the right while this one sits on the left.
 - If a change doesn't show, re-equip the armor or start a mission.
 
@@ -136,7 +138,7 @@ pip install lupa                                   # optional: Lua syntax check
 python tools\picker.py list                        # every passive, effect, default
 python tools\picker.py build loadout.ini           # preview
 python tools\picker.py build loadout.ini --zip "My Stack.zip"
-python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v6.2.1.zip   # the release zip (CI names it after the tag)
+python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v6.3.zip   # the release zip (CI names it after the tag)
 ```
 
 The web builder can import and export the same `loadout.ini`.
@@ -268,6 +270,7 @@ It only commits when a number changed, never lowers downloads/views, and logs to
 ## Credits
 
 - **mostlycloudy**: Passive Picker v3, where this started: memory-patching engine, archive format, passive data ([AyakaMods](https://ayakamods.com/mods/modular-armor-passives.4350/))
+- **page-mascot** by Kamran Ahmed (MIT): the panel's and the web builder's mascot (idea, behaviour, and the web builder's "astronaut" sprite sheets)
 - **SHODAN**: engine credit, as noted in v3; the panel's drawing, input and font handling are adapted from [SHODAN Stat Editor](https://github.com/SHODAN-HORAI/SHODAN-Stat-Editor) v1.4.1 (public domain)
 - **Bingus Shared Loader**: the loader this runs on
 - **hd2modpj**: the Simplified Chinese (简体中文) translation of the panel, from their *Super Earth Armory Forge 简体中文* addon

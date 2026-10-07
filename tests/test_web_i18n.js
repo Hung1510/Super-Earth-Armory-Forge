@@ -22,6 +22,7 @@ check(tr("Med-Kit (the armor's own passive)") === "医疗包（护甲自带被�
 check(tr("radar ping, detection radius") === "雷达扫描间隔、敌人探测半径", "effect lists");
 check(tr("mul; 0.5 = 50% resist · default 0.5") === "倍率；0.5 = 50% 抗性 · 默认 0.5", "effect hints");
 check(tr("B-01 Tactical #2 (medium)") === 'B-01"战术" #2（中型）', "armor options with their weight");
+check(tr("hide the mascot") === "隐藏吉祥物" && tr("Mascot:") === "吉祥物：" && tr("by Kamran Ahmed (MIT) ·") !== "by Kamran Ahmed (MIT) ·", "the mascot line in the footer");
 check(tr("Something nobody wrote") === "Something nobody wrote", "unknown text stays as it is");
 const lang = data.lang && data.lang.zh;
 check(lang && Object.keys(lang.perk).length >= 31 && Object.keys(lang.armor).length > 200, "data.json carries the Chinese name tables");

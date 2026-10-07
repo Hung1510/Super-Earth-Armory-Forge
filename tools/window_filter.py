@@ -12,11 +12,16 @@ This filter runs on the window's thread, without Lua:
             mouse button presses are dropped; a release passes only if the game saw its
             press; wheel turns are added up for the panel's own scrolling and dropped
 
+6.3: with the flag on and the raw flag set, WM_INPUT (the game's raw mouse, when it is
+registered from another thread and the panel can't take the registration back) is dropped
+too: handed to DefWindowProcW so Windows can free it, never to the game.
+
 Block (one 4 KB page, read / write / execute; the panel fills the data, the code is at +64):
-  +0  u32 flag             +4  i32 wheel total (120 a notch, + = away from you)
+  +0  u32 flag (bit 0 on, bit 1 also drop raw input)    +4  i32 wheel total (120 a notch, + = away from you)
   +8  u32 keys dropped     +12 u32 button presses / releases dropped
   +16 u64 previous procedure                +24 u64 CallWindowProcW
   +32 u32 buttons the game saw pressed (bit 0 left, 1 right, 2 middle, 3 X)
+  +36 u32 raw input messages dropped        +40 u64 DefWindowProcW
   +48 u8[13] per message WM_LBUTTONDOWN + n: kind * 16 + button (kind 1 press, 2 release)
   +64 code: mov r10, <block>; then CODE below
 
@@ -66,6 +71,16 @@ wheel:
 not_mouse:
     cmp dword ptr [r10], 0
     je pass
+    cmp edx, 0xFF
+    jne not_raw
+    test dword ptr [r10], 2
+    jz pass
+    inc dword ptr [r10 + 36]
+    sub rsp, 0x28
+    call qword ptr [r10 + 40]
+    add rsp, 0x28
+    ret
+not_raw:
     cmp edx, 0x100
     je drop_key
     cmp edx, 0x102

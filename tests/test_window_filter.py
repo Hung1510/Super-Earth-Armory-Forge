@@ -10,6 +10,8 @@ emulator (unicorn) exactly as tools/panel.lua lays it out in memory.
 2. Flag off: every message passes to the game's procedure with the right arguments
    (CallWindowProcW(previous, window, message, wParam, lParam), 5th on the stack, stack
    aligned); its return value comes back.
+4. 6.3: with the raw bit set (flag = 3), WM_INPUT goes to DefWindowProcW (never the game) and is counted; with
+   it clear (flag = 1) WM_INPUT passes like before.
 3. Flag on: key presses and typed characters are dropped, key releases and Alt keys pass;
    button presses and double clicks are dropped; a release passes only if the game saw its
    press; wheel turns are added up (signed) and dropped; mouse movement passes.
@@ -48,18 +50,21 @@ except ImportError:
 table = [int(x, 16) for x in __import__("re").search(r"FILTER_TABLE = \{([^}]*)\}", panel).group(1).replace(" ", "").split(",") if x]
 check(table == wf.TABLE, "... and its message table")
 
-BLOCK, CALL, STACK, RET = 0x100000, 0x200000, 0x300000, 0x400000
+BLOCK, CALL, STACK, RET, DEF = 0x100000, 0x200000, 0x300000, 0x400000, 0x500000
 WINDOW, PREV = 0x1234_5678_9ABC, 0x7FFF_0000_1111
 mu = Uc(UC_ARCH_X86, UC_MODE_64)
-for base in (BLOCK, CALL, STACK, RET):
+for base in (BLOCK, CALL, STACK, RET, DEF):
     mu.mem_map(base, 0x10000)
 page = bytearray(4096)
 struct.pack_into("<QQ", page, 16, PREV, CALL)
+struct.pack_into("<Q", page, 40, DEF)
 page[48:48 + len(table)] = bytes(table)
 page[64:74] = b"\x49\xBA" + struct.pack("<Q", BLOCK)          # mov r10, <block>
 page[74:74 + len(code)] = code
 mu.mem_write(BLOCK, bytes(page))
 mu.mem_write(CALL, b"\xB8\x77\x00\x00\x00\xC3")                # fake CallWindowProcW: mov eax, 0x77; ret
+mu.mem_write(DEF, b"\xB8\x55\x00\x00\x00\xC3")                 # fake DefWindowProcW: mov eax, 0x55; ret
+def_calls = []
 calls = []
 
 
@@ -74,8 +79,18 @@ def at_call(uc, address, size, _):
 mu.hook_add(UC_HOOK_CODE, at_call, begin=CALL, end=CALL)
 
 
+def at_def(uc, address, size, _):
+    if address == DEF:
+        rsp = uc.reg_read(UC_X86_REG_RSP)
+        def_calls.append((uc.reg_read(UC_X86_REG_RCX), uc.reg_read(UC_X86_REG_RDX) & 0xFFFFFFFF, uc.reg_read(UC_X86_REG_R8),
+                          uc.reg_read(UC_X86_REG_R9), rsp % 16))
+
+
+mu.hook_add(UC_HOOK_CODE, at_def, begin=DEF, end=DEF)
+
+
 def flag(on):
-    mu.mem_write(BLOCK, struct.pack("<I", 1 if on else 0))
+    mu.mem_write(BLOCK, struct.pack("<I", 3 if on == 3 else 1 if on else 0))
 
 
 def u32(off, signed=False):
@@ -85,6 +100,7 @@ def u32(off, signed=False):
 def send(msg, wparam=0, lparam=0xABCD):
     """the game window gets a message: (passed to the game?, return value)"""
     calls.clear()
+    def_calls.clear()
     rsp = STACK + 0x8000 - 8                                    # as after a call: rsp = 8 (mod 16)
     mu.mem_write(rsp, struct.pack("<Q", RET))
     mu.reg_write(UC_X86_REG_RSP, rsp)
@@ -95,6 +111,8 @@ def send(msg, wparam=0, lparam=0xABCD):
     mu.reg_write(UC_X86_REG_RAX, 0xDEAD)
     mu.emu_start(BLOCK + 64, RET)
     assert mu.reg_read(UC_X86_REG_RIP) == RET and mu.reg_read(UC_X86_REG_RSP) == rsp + 8, "returned to its caller"
+    if def_calls:
+        return False, mu.reg_read(UC_X86_REG_EAX)
     if calls:
         c = calls[0]
         assert c[:5] == (PREV, WINDOW, msg, wparam, lparam), "CallWindowProcW args %r" % (c,)
@@ -130,6 +148,18 @@ send(WHEEL, 120 << 16)
 send(WHEEL, (0x10000 - 360) << 16 | 0x8)
 check(u32(4, signed=True) == -240 and send(WHEEL, 0)[0] is False, "wheel turns are added up, signed, and dropped")
 check(send(MOVE)[0], "mouse movement passes (the cursor still moves)")
+
+RAW = 0xFF
+flag(True)
+check(send(RAW)[0], "flag on, raw bit clear: WM_INPUT passes to the game as before")
+flag(3)
+ok_raw = send(RAW, 1, 0xBEEF)
+check(not ok_raw[0] and ok_raw[1] == 0x55 and len(def_calls) == 1, "raw bit set: WM_INPUT goes to DefWindowProcW and returns its value, not to the game")
+check(def_calls[0][:4] == (WINDOW, RAW, 1, 0xBEEF) and def_calls[0][4] == 8, "... with the original arguments, stack aligned at the call")
+check(u32(36) == 1, "... and is counted")
+check(send(KEYDOWN)[0] is False and send(KEYUP)[0] and send(MOVE)[0] and send(0x10)[0], "keys, releases, moves and other messages behave as with flag on")
+flag(False)
+check(send(RAW)[0] and u32(36) == 1, "flag off: WM_INPUT passes and nothing is counted")
 
 flag(False)
 check(send(KEYDOWN)[0] and send(LDOWN)[0] and send(WHEEL)[0], "flag off again: everything passes")

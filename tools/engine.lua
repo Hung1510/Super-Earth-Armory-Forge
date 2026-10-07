@@ -56,7 +56,7 @@ if rawget(_G, MOD.global) then return end
 
 local HEADER_BYTES = 24
 local MAX_PAYLOAD = 64 * 1024 * 1024
-local BUDGET_MIN, BUDGET_MAX, BUDGET_SHARE = 0.0015, 0.004, 0.2   -- seconds of scanning per frame
+local BUDGET_MIN, BUDGET_MAX, BUDGET_SHARE = 0.0008, 0.002, 0.08   -- seconds of scanning per frame
 local HOT_WINDOW = 4 * 1024 * 1024    -- after the first armor-passive block, look this far around it
 local KIT_WINDOW = 1024 * 1024        -- and this far around the armor kit records (weight)
 local CHUNK = 262144
@@ -765,8 +765,9 @@ local function save_now()
     save_at = nil
     local path = save_path()
     if not path then return false end
-    local ok = write_file(path, serialize(LOADOUT, DEFAULT_KEY))
-    if not ok then log('could not save ' .. path) end
+    local text = serialize(LOADOUT, DEFAULT_KEY)
+    local ok = write_file(path, text)
+    if not ok then log('could not save ' .. path) else state.disk_text = text end
     return ok
 end
 
@@ -785,6 +786,7 @@ local function load_loadout()
             saved.swap_hotkey = saved.swap_hotkey or def.swap_hotkey
             saved.panel_scale = saved.panel_scale or def.panel_scale
             log('loadout: using the panel save ' .. path)
+            state.disk_text = text
             return saved, 'saved'
         elseif ok and saved.base ~= DEFAULT_KEY then
             log('loadout: a different build is installed; starting from its built-in loadout')
@@ -928,8 +930,20 @@ local function apply_site(site, res)
     site.rows_now = #want_pm / ROW_BYTES
     site.stats_now = #want_sm / STAT_BYTES
     site.added = site.rows_now - site.pm_count0 + site.stats_now - site.sm_count0
+    -- what the block looks like now: enforce() compares one read against this and only
+    -- does the full check when something moved (6.3; it used to rebuild every row every 5 s)
+    site.snap = api.read(site.block, HEADER_BYTES + REC_HEAD + site.pm_count0 * ROW_BYTES + site.sm_count0 * STAT_BYTES)
     if r1 == 'applied' or r2 == 'applied' then return 'applied' end
     return 'same'
+end
+
+-- true when every site of this passive reads exactly as it did after the last apply
+local function sites_unchanged(list)
+    for _, site in ipairs(list) do
+        local snap = site.snap
+        if site.foreign or not snap or api.read(site.block, #snap) ~= snap then return false end
+    end
+    return true
 end
 
 local last_result = {}       -- perk -> { res = resolved, text = status }
@@ -1044,6 +1058,7 @@ function KITS.capture(block, blob)
     if #kit.pieces == 0 then return end
     KITS.by_record[record] = kit
     KITS.list[#KITS.list + 1] = kit
+    KITS.bp = nil
     KITS.found = KITS.found + 1
     if not KITS.lo or block < KITS.lo then KITS.lo = block end
     if not KITS.hi or block > KITS.hi then KITS.hi = block end
@@ -1094,9 +1109,24 @@ function KITS.apply_id(id)
 end
 
 -- every armor with this passive (its profile changed)
+function KITS.group()
+    local g = KITS.bp
+    if not g then
+        g = {}
+        for _, kit in ipairs(KITS.list) do
+            local l = g[kit.passive]
+            if not l then l = {}; g[kit.passive] = l end
+            l[#l + 1] = kit
+        end
+        KITS.bp = g
+    end
+    return g
+end
+
 function KITS.apply(perk)
     local n = 0
-    for _, kit in ipairs(KITS.list) do if kit.passive == perk then n = n + KITS.apply_kit(kit) end end
+    if MOD.swap_only then return 0 end                -- the Lite edition never touches weight
+    for _, kit in ipairs(KITS.group()[perk] or {}) do n = n + KITS.apply_kit(kit) end
     if n > 0 then log('weight: ' .. CAT[perk].name .. ' armors updated (' .. n .. ' pieces)') end
 end
 
@@ -1125,6 +1155,7 @@ function KITS.enforce()
         end
     end
     KITS.list = kept
+    KITS.bp = nil
     KITS.apply_all()
 end
 
@@ -1179,17 +1210,53 @@ end
 -- the 5.7 research build: the three copies that changed when another armor was equipped).
 -- Once the kits are known, one budgeted pass over memory finds those triples; after that
 -- they're re-read every second. KITS.worn is the armor id most of them hold.
-KITS.wear = { state = 'idle', spots = {}, tries = 0 }
+-- 6.3: the pass costs at most WEAR_BUDGET per frame; when every spot goes stale (a new
+-- mission) only the regions that held them are searched again, and a full pass happens at
+-- most WEAR_FULL_MAX times a session, and only while the panel is open (it is the only
+-- thing that shows what you wear).
+local WEAR_BUDGET, WEAR_FULL_MAX = 0.001, 3
+KITS.wear = { state = 'idle', spots = {}, tries = 0, full = 0 }
 
-function KITS.find_start(now)
+-- Sweeping the whole address space (VirtualQuery in a loop, then a sort) takes a few ms:
+-- the scan that just ran already did it, so the wearing pass reuses that list for 30 s.
+local region_list, region_at = nil, -1e9
+local function regions_now(max_age)
+    local now = api.now()
+    if region_list and now - region_at < max_age then return region_list end
+    region_list, region_at = api.regions(), now
+    return region_list
+end
+KITS.regions_now = regions_now
+local band = (function() local ok, b = pcall(require, 'bit'); return ok and b and b.band end)()
+
+local function panel_open() return state.ui and state.ui.open end
+
+function KITS.find_start(now, near)
     local W = KITS.wear
-    local bm = ffi.new('uint8_t[65536]')
-    local any = false
-    for id, kind in pairs(KITS.ids) do if kind == 0 then bm[id % 65536] = 1; any = true end end
-    if not any then return end
-    W.bm, W.regions, W.idx, W.cursor, W.found = bm, api.regions(), 1, 0, {}
+    local bm = W.bm
+    if not bm then
+        bm = ffi.new('uint8_t[65536]')
+        local any = false
+        for id, kind in pairs(KITS.ids) do if kind == 0 then bm[id % 65536] = 1; any = true end end
+        if not any then return end
+        W.bm = bm
+    end
+    local regions = regions_now(30)
+    if near and #near > 0 then
+        local pick = {}
+        for _, r in ipairs(regions) do
+            for _, a in ipairs(near) do
+                if a >= r.base and a < r.base + r.size then pick[#pick + 1] = r break end
+            end
+        end
+        if #pick > 0 then regions = pick else near = nil end
+    else
+        near = nil
+    end
+    W.regions, W.idx, W.cursor, W.found, W.near = regions, 1, 0, {}, near ~= nil
     W.lo, W.hi = (KITS.lo or 0) - 0x10000, (KITS.hi or 0) + 0x10000
-    W.state, W.tries, W.t0 = 'scanning', W.tries + 1, now
+    W.state, W.t0 = 'scanning', now
+    if not W.near then W.tries, W.full = W.tries + 1, W.full + 1 end
 end
 
 local function wear_chunk(base, size)
@@ -1198,11 +1265,12 @@ local function wear_chunk(base, size)
     local p32 = ffi.cast('uint32_t *', p)
     local W, ids = KITS.wear, KITS.ids
     local bm = W.bm
+    local found = W.found
     for i = 2, math.floor(size / 4) - 1 do
         local v = p32[i]
-        if bm[v % 65536] ~= 0 and ids[v] == 0 and ids[p32[i - 2]] == 1 and ids[p32[i - 1]] == 2 then
+        if bm[band and band(v, 0xFFFF) or v % 65536] ~= 0 and ids[v] == 0 and ids[p32[i - 2]] == 1 and ids[p32[i - 1]] == 2 then
             local addr = base + i * 4
-            if (addr < W.lo or addr > W.hi) and #W.found < 32 then W.found[#W.found + 1] = addr end
+            if (addr < W.lo or addr > W.hi) and #found < 32 then found[#found + 1] = addr end
         end
     end
 end
@@ -1210,15 +1278,24 @@ end
 function KITS.wear_tick(now)
     local W = KITS.wear
     if W.state == 'idle' then
-        if KITS.found > 0 and W.tries < 4 and now >= (W.retry_at or 0) then KITS.find_start(now) end
+        if KITS.found > 0 and now >= (W.retry_at or 0) then
+            if W.full == 0 then
+                KITS.find_start(now)                         -- the first pass: right after startup
+            elseif W.full < WEAR_FULL_MAX and panel_open() then
+                KITS.find_start(now)                         -- later passes: only for a panel that needs it
+            end
+        end
     elseif W.state == 'scanning' then
-        local deadline = api.now() + 0.003
+        local deadline = api.now() + WEAR_BUDGET
         while true do
             local r = W.regions[W.idx]
             if not r then
                 W.state, W.spots, W.check_at = 'watching', W.found, 0
-                log('wearing: ' .. #W.found .. ' loadout spot(s) found in ' .. string.format('%.0f', now - W.t0) .. ' s')
-                if #W.found == 0 then W.state, W.retry_at = 'idle', now + 30 end
+                log('wearing: ' .. #W.found .. ' loadout spot(s) found in ' .. string.format('%.0f', now - W.t0) .. ' s'
+                    .. (W.near and ' (nearby)' or ''))
+                if #W.found == 0 then
+                    W.state, W.retry_at = 'idle', now + (W.near and 5 or 60)
+                end
                 break
             end
             if W.cursor >= r.size then W.idx, W.cursor = W.idx + 1, 0
@@ -1230,7 +1307,7 @@ function KITS.wear_tick(now)
             if api.now() >= deadline then break end
         end
     elseif W.state == 'watching' and now >= W.check_at then
-        W.check_at = now + 1
+        W.check_at = now + (panel_open() and 1 or 3)     -- closed panel: nobody is looking
         local votes, best, n = {}, nil, 0
         for _, addr in ipairs(W.spots) do
             local b = api.read(addr - 8, 12)
@@ -1245,8 +1322,13 @@ function KITS.wear_tick(now)
                 KITS.worn = best
                 log('wearing: ' .. KITS.name(best))
             end
-        else                                    -- the spots are gone (new session?): look again
-            W.state, W.retry_at, W.tries = 'idle', now + 10, math.max(0, W.tries - 1)
+        else                                    -- the spots are gone (new session?): search where they were
+            local near = W.spots
+            W.state, W.retry_at = 'idle', now + 5
+            if #near > 0 and now >= (W.near_at or 0) then
+                W.near_at = now + 20
+                KITS.find_start(now, near)
+            end
         end
     end
 end
@@ -1518,7 +1600,7 @@ local function begin_round()
     seen_blocks = {}
     found_lo, found_hi = nil, nil
     state.rounds = state.rounds + 1
-    for _, region in ipairs(api.regions()) do
+    for _, region in ipairs(KITS.regions_now(0)) do
         if region.allocation_base and region.size >= PROBE_MIN_ALLOC then
             probe.regions[#probe.regions + 1] = region
         end
@@ -1526,7 +1608,7 @@ local function begin_round()
     end
 end
 
--- A share of the frame, measured: ~3 ms at 60 fps, ~1.5 ms at 144 fps, at most 4 ms.
+-- A share of the frame, measured: ~1.3 ms at 60 fps, ~0.8 ms at 144 fps, at most 2 ms.
 local last_frame_at, frame_dt = nil, 1 / 60
 local function frame_budget()
     local now = api.now()
@@ -1623,8 +1705,8 @@ local function enforce()
             list[#list + 1] = s
         end
     end
-    for perk in pairs(sites_by_perk) do
-        if apply_perk(perk, true) then
+    for perk, list in pairs(sites_by_perk) do
+        if not sites_unchanged(list) and apply_perk(perk, true) then
             state.reapplied = state.reapplied + 1
             log('was changed by something else; re-applied ' .. CAT[perk].name)
             pcall(flush_log)

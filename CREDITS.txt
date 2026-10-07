@@ -19,6 +19,11 @@ Armor weight ....... the armor kit record layout comes from FileDiver by xypwn
                      translation from their "Super Earth Armory Forge 简体中文" addon,
                      with the game's official Chinese passive and armor names
 Web builder ........ uses JSZip (MIT) - docs/vendor/
+Mascot ............. the idea and behaviour (eyes follow the cursor, boop, dizzy) are from
+                     page-mascot by Kamran Ahmed (MIT) https://github.com/nilbuild/page-mascot
+                     The web builder's mascot uses its "astronaut" sprite sheets
+                     (docs/mascot/, licence copied there); the in-game one is drawn from
+                     rectangles and shares no art with it.
 Loader ............. Bingus Shared Loader (required)
                      https://ayakamods.com/mods/bingus-shared-loader.3861/
 

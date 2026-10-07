@@ -225,7 +225,17 @@ G[b"RAW_OTHER_THREAD"] = True
 gm.key(F7)
 gm.tick(60)
 check(len(raw()) == 2 and "another thread" in gi()[b"state"].decode(), "raw input owned by another thread is left alone")
+check(G[b"GAME_HELD"](), "... and the window filter drops its WM_INPUT, so the camera does not move (6.3, Filtiarne / anmayvu)")
+check("dropped by the window filter" in gi()[b"state"].decode(), "... and the report says so")
 gm.key(F7)
+gm.tick(30)
+check(not G[b"GAME_HELD"](), "closed again: the game gets its raw mouse")
+G[b"FILTER_NO_RAW"] = True                    # a filter without DefWindowProcW: nothing can be dropped, so it says it left it alone
+gm.key(F7)
+gm.tick(60)
+check(not G[b"GAME_HELD"]() and "left alone" in gi()[b"state"].decode(), "no raw drop available: left alone, as before")
+gm.key(F7)
+G[b"FILTER_NO_RAW"] = False
 G[b"RAW_OTHER_THREAD"] = False
 
 # giving it back fails: the game still gets a mouse and keyboard, and blocking stops for the session

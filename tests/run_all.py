@@ -34,6 +34,8 @@ SUITES = [
     ("test_every_armor.py", "the Every armor stack: a setup that stays whatever armor you wear"),
     ("test_lang.py", "the panel in Simplified Chinese; data stays English; fonts without Chinese"),
     ("test_window_filter.py", "game-window input filter machine code, on an x64 emulator"),
+    ("test_mascot.py", "the panel mascot: eyes follow the cursor, boop, dizzy, off switch"),
+    ("test_hot_reload.py", "loadout.ini edited while the game runs is reloaded, undoable"),
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),

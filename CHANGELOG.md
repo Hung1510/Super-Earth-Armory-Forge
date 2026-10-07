@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.3 (2026-10-07)
+Both editions (full and Passive Swap):
+- **Much lighter on the game:** the mod no longer scans the game's memory for what you're wearing over and over (it did that in the background, a few milliseconds every frame, and started again after every mission load). The first search costs a third of what it did; after that the mod only looks again near where it found your armor, a few times at most, and only while the panel is open. The controller check that stalled a frame about once a second without a controller now runs every three seconds, and the 5-second re-check (*retire = false*) reads one block per passive instead of rebuilding every row. Thanks MuddyMo, yixia and AKmods934 for the reports and the lag-watchdog numbers.
+- **The game's mouse stays still while the panel is open, on more setups:** where the game registers its raw mouse from another thread (the Keys tab used to say *raw input on another thread: left alone*), the window now drops those mouse messages itself while the panel is open. Thanks anmayvu and Filtiarne. If it still moves, Keys tab → *Copy problem report* and send it.
+- **Edit `loadout.ini` while the game runs:** save the file and the mod picks it up within a couple of seconds. Anything the file no longer lists goes back to the game's own values, no restart needed. *Undo* in the panel brings the previous loadout back. Thanks cLoser.
+- **A little mascot** in the panel's top-left box: its eyes follow your cursor, click it to boop it (four quick boops make it dizzy). Keys tab → *Mascot* turns it off. The web builder has the same kind of mascot, bottom right (*hide the mascot* in the footer). Idea and behaviour from [page-mascot](https://github.com/nilbuild/page-mascot) by Kamran Ahmed (MIT).
+
 ## 6.2.1 (2026-10-02)
 Both editions (full and Passive Swap):
 - **Bigger panel on small screens:** the panel size now goes up to 200%. Up to 150% it always fits the screen as before; above that, on a 720p or 900p screen, the panel gets taller than the screen so its text is bigger, and the mouse wheel outside a list scrolls it up and down. Keys tab → *Size*, Ctrl +, or `[+]` at the top. Thanks NicoNirva.

@@ -40,14 +40,16 @@ local FILTER_CODE = {
     0x8D, 0x82, 0xFF, 0xFD, 0xFF, 0xFF, 0x83, 0xF8, 0x0C, 0x77, 0x54, 0x45, 0x0F, 0xB6, 0x5C, 0x02,
     0x30, 0x45, 0x85, 0xDB, 0x74, 0x2A, 0x44, 0x89, 0xD8, 0x41, 0x83, 0xE3, 0x0F, 0xC1, 0xE8, 0x04,
     0x83, 0xF8, 0x02, 0x74, 0x0D, 0x41, 0x83, 0x3A, 0x00, 0x75, 0x0E, 0x45, 0x0F, 0xAB, 0x5A, 0x20,
-    0xEB, 0x5C, 0x45, 0x0F, 0xB3, 0x5A, 0x20, 0x72, 0x55, 0x41, 0xFF, 0x42, 0x0C, 0x31, 0xC0, 0xC3,
-    0x81, 0xFA, 0x0A, 0x02, 0x00, 0x00, 0x75, 0x46, 0x41, 0x83, 0x3A, 0x00, 0x74, 0x40, 0x4C, 0x89,
+    0xEB, 0x7E, 0x45, 0x0F, 0xB3, 0x5A, 0x20, 0x72, 0x77, 0x41, 0xFF, 0x42, 0x0C, 0x31, 0xC0, 0xC3,
+    0x81, 0xFA, 0x0A, 0x02, 0x00, 0x00, 0x75, 0x68, 0x41, 0x83, 0x3A, 0x00, 0x74, 0x62, 0x4C, 0x89,
     0xC0, 0x48, 0xC1, 0xE8, 0x10, 0x0F, 0xBF, 0xC0, 0x41, 0x01, 0x42, 0x04, 0x31, 0xC0, 0xC3, 0x41,
-    0x83, 0x3A, 0x00, 0x74, 0x29, 0x81, 0xFA, 0x00, 0x01, 0x00, 0x00, 0x74, 0x1A, 0x81, 0xFA, 0x02,
-    0x01, 0x00, 0x00, 0x74, 0x12, 0x81, 0xFA, 0x03, 0x01, 0x00, 0x00, 0x74, 0x0A, 0x81, 0xFA, 0x09,
-    0x01, 0x00, 0x00, 0x74, 0x02, 0xEB, 0x07, 0x41, 0xFF, 0x42, 0x08, 0x31, 0xC0, 0xC3, 0x48, 0x83,
-    0xEC, 0x38, 0x4C, 0x89, 0x4C, 0x24, 0x20, 0x4D, 0x89, 0xC1, 0x41, 0x89, 0xD0, 0x48, 0x89, 0xCA,
-    0x49, 0x8B, 0x4A, 0x10, 0x41, 0xFF, 0x52, 0x18, 0x48, 0x83, 0xC4, 0x38, 0xC3,
+    0x83, 0x3A, 0x00, 0x74, 0x4B, 0x81, 0xFA, 0xFF, 0x00, 0x00, 0x00, 0x75, 0x1A, 0x41, 0xF7, 0x02,
+    0x02, 0x00, 0x00, 0x00, 0x74, 0x3A, 0x41, 0xFF, 0x42, 0x24, 0x48, 0x83, 0xEC, 0x28, 0x41, 0xFF,
+    0x52, 0x28, 0x48, 0x83, 0xC4, 0x28, 0xC3, 0x81, 0xFA, 0x00, 0x01, 0x00, 0x00, 0x74, 0x1A, 0x81,
+    0xFA, 0x02, 0x01, 0x00, 0x00, 0x74, 0x12, 0x81, 0xFA, 0x03, 0x01, 0x00, 0x00, 0x74, 0x0A, 0x81,
+    0xFA, 0x09, 0x01, 0x00, 0x00, 0x74, 0x02, 0xEB, 0x07, 0x41, 0xFF, 0x42, 0x08, 0x31, 0xC0, 0xC3,
+    0x48, 0x83, 0xEC, 0x38, 0x4C, 0x89, 0x4C, 0x24, 0x20, 0x4D, 0x89, 0xC1, 0x41, 0x89, 0xD0, 0x48,
+    0x89, 0xCA, 0x49, 0x8B, 0x4A, 0x10, 0x41, 0xFF, 0x52, 0x18, 0x48, 0x83, 0xC4, 0x38, 0xC3,
 }
 
 local function build_input()
@@ -144,10 +146,12 @@ local function build_input()
             if f.window == window and current == f.entry then return f end
         end
         local call = kernel.GetProcAddress(kernel.GetModuleHandleA('user32.dll'), 'CallWindowProcW')
+        local defproc = kernel.GetProcAddress(kernel.GetModuleHandleA('user32.dll'), 'DefWindowProcW')
         local block = kernel.VirtualAlloc(nil, 4096, 0x3000, 0x40)      -- commit + reserve, read / write / execute
         if call == nil or block == nil or current == 0 then return nil, 'no memory for it' end
         local b, q, u = ffi.cast('uint8_t *', block), ffi.cast('uint64_t *', block), ffi.cast('uint32_t *', block)
         q[2], q[3] = ffi.cast('uint64_t', current), ffi.cast('uint64_t', ffi.cast('uintptr_t', call))
+        q[5] = defproc ~= nil and ffi.cast('uint64_t', ffi.cast('uintptr_t', defproc)) or 0   -- raw input is only dropped with it
         for k, v in ipairs(FILTER_TABLE) do b[47 + k] = v end
         local held = 0                                                  -- buttons down now: the game saw them pressed
         for n, vk in ipairs({ 0x01, 0x02, 0x04, 0x05 }) do
@@ -162,12 +166,18 @@ local function build_input()
         local previous = user.SetWindowLongPtrW(window, -4, entry)
         if previous == 0 then return nil, 'Windows refused it' end
         if previous ~= current then q[2] = ffi.cast('uint64_t', previous) end
-        local f = { window = window, entry = entry, u = u }
+        local f = { window = window, entry = entry, u = u, raw_ok = defproc ~= nil }
         filters[#filters + 1] = f
         return f
     end
-    function self.filter_set(on)
-        for _, f in ipairs(filters) do f.u[0] = on and 1 or 0 end
+    -- on: the filter drops keys / clicks / wheel. raw: also drop WM_INPUT (the game's raw
+    -- mouse registered from another thread, which the panel can't take back); needs DefWindowProcW
+    function self.filter_set(on, raw)
+        for _, f in ipairs(filters) do f.u[0] = on and ((raw and f.raw_ok) and 3 or 1) or 0 end
+    end
+    function self.filter_raw_ok()
+        for _, f in ipairs(filters) do if f.raw_ok then return true end end
+        return false
     end
     function self.filter_wheel()
         local t = 0
@@ -175,9 +185,9 @@ local function build_input()
         return t
     end
     function self.filter_stats()
-        local keys, buttons = 0, 0
-        for _, f in ipairs(filters) do keys, buttons = keys + f.u[2], buttons + f.u[3] end
-        return keys, buttons
+        local keys, buttons, raw = 0, 0, 0
+        for _, f in ipairs(filters) do keys, buttons, raw = keys + f.u[2], buttons + f.u[3], raw + f.u[9] end
+        return keys, buttons, raw
     end
     -- cursor in client pixels from the top left, and the client size
     function self.cursor()
@@ -197,18 +207,22 @@ local function build_input()
         local ok, lib = pcall(ffi.load, name)
         if ok and lib then xinput = lib break end
     end
-    local pad_buf, pad_slot, pad_probe, pad_frames = ffi.new('uint8_t[16]'), nil, 0, 0
+    local pad_buf, pad_slot, pad_probe, pad_frames = ffi.new('uint8_t[16]'), nil, 1, 0
+    local pad_state = ffi.cast('void *', pad_buf)
+    local PAD_ORDER = { 0, 1, 0, 2, 0, 3 }        -- slot 0 is by far the common one
     -- buttons, left stick x/y, right stick x/y of the first connected controller, or nil.
-    -- Asking an empty slot is slow, so without a controller one slot is tried every 60 frames.
+    -- Asking an empty slot is slow (it stalls the frame), so without a controller one slot
+    -- is tried every 180 frames (3 s at 60 fps); a controller is picked up within a few seconds.
     function self.pad()
         if not xinput then return nil end
         if not pad_slot then
             pad_frames = pad_frames + 1
-            if pad_frames % 60 ~= 1 then return nil end
-            local ok, r = pcall(xinput.XInputGetState, pad_probe, ffi.cast('void *', pad_buf))
-            if ok and r == 0 then pad_slot = pad_probe else pad_probe = (pad_probe + 1) % 4; return nil end
+            if pad_frames % 180 ~= 1 then return nil end
+            local slot = PAD_ORDER[pad_probe]
+            local ok, r = pcall(xinput.XInputGetState, slot, pad_state)
+            if ok and r == 0 then pad_slot = slot else pad_probe = pad_probe % #PAD_ORDER + 1; return nil end
         end
-        local ok, r = pcall(xinput.XInputGetState, pad_slot, ffi.cast('void *', pad_buf))
+        local ok, r = pcall(xinput.XInputGetState, pad_slot, pad_state)
         if not ok or r ~= 0 then pad_slot = nil; return nil end
         local s16 = ffi.cast('int16_t *', pad_buf + 8)
         return ffi.cast('uint16_t *', pad_buf + 4)[0], s16[0], s16[1], s16[2], s16[3]
@@ -882,12 +896,14 @@ function PP.load_pos()
     ui.pos = (tonumber(x) and tonumber(y)) and { fx = tonumber(x), fy = tonumber(y) } or nil
     ui.block_input = not tostring(t or ''):match('block_input%s*=%s*off')
     ui.lang = tostring(t or ''):match('lang%s*=%s*(%a%a)') or 'en'
+    ui.mascot = not tostring(t or ''):match('mascot%s*=%s*off')
 end
 function PP.save_pos()
     local path = forge_file('panel-position.txt')
     if not path then return end
     write_file(path, (ui.pos and string.format('x = %.4f\ny = %.4f\n', ui.pos.fx, ui.pos.fy) or '') ..
                      (ui.block_input == false and 'block_input = off\n' or '') ..
+                     (ui.mascot == false and 'mascot = off\n' or '') ..
                      ((ui.lang and ui.lang ~= 'en') and ('lang = ' .. ui.lang .. '\n') or ''))
 end
 
@@ -1085,12 +1101,152 @@ local function choose_font(gui)
     return { text = 'no text: ' .. tostring(why) .. '; debug font not loaded either' }
 end
 
+-- ---------------------------------------------------------------- the mascot (6.3)
+-- A little screen-faced robot in the emblem box: its eyes follow the cursor, a click boops it
+-- (blink, then a heart / sparkle / grin; four quick boops make it dizzy). The idea, the nine
+-- directions, the dead zone and hysteresis, and the boop / dizzy rhythm are from page-mascot
+-- by Kamran Ahmed (MIT, https://github.com/nilbuild/page-mascot); the drawing is ours (no
+-- sprite sheets: a few dozen rects, on a gui of its own so the panel is not rebuilt when
+-- the eyes move). Off in the Keys tab; costs nothing while the panel is closed.
+PP.mas = { dir = 'center', sector = -1, react = nil, boops = 0, boop_at = -10, blink_at = nil, blink_until = 0 }
+local MAS_CLOCKWISE = { 'right', 'down-right', 'down', 'down-left', 'left', 'up-left', 'up', 'up-right' }
+local MAS_SECTOR, MAS_HYST = math.pi * 2 / 8, 0.12
+local MAS_PAYOFF = { 'heart', 'sparkle', 'delighted' }
+
+local function mas_wrap(a) return math.atan2 and math.atan2(math.sin(a), math.cos(a)) or math.atan(math.sin(a), math.cos(a)) end
+
+-- the cursor, in the same pixels as the regions (x from the left, y from the bottom)
+function PP.mas_aim(sx, sy_up)
+    local M, g = PP.mas, PP.mas.geom
+    if not g or ui.mascot == false then return end
+    local dx, dy = sx - g.cx, g.cy - sy_up
+    if math.sqrt(dx * dx + dy * dy) < 30 * g.s then
+        M.sector, M.dir = -1, 'center'
+        return
+    end
+    local angle = (math.atan2 or math.atan)(dy, dx)
+    if M.sector ~= -1 and math.abs(mas_wrap(angle - M.sector * MAS_SECTOR)) < MAS_SECTOR / 2 + MAS_HYST then return end
+    M.sector = (math.floor(angle / MAS_SECTOR + 0.5) + 8) % 8
+    M.dir = MAS_CLOCKWISE[M.sector + 1]
+end
+
+function PP.mas_boop(now)
+    local M = PP.mas
+    M.boops = (now - M.boop_at < 1.6) and (M.boops + 1) or 1
+    M.boop_at, M.t0 = now, now
+    if M.boops >= 4 then
+        M.boops, M.react, M.till = 0, 'dizzy', now + 1.1
+    else
+        M.react, M.till, M.payoff = 'boop', now + 0.56, MAS_PAYOFF[(M.boops - 1) % 3 + 1]
+    end
+end
+
+-- 'direction:reaction' (changes only when the picture must), and the reaction to draw
+function PP.mas_state(now)
+    local M = PP.mas
+    local r = nil
+    if M.react and now >= M.till then M.react = nil end
+    if M.react == 'boop' then r = (now - M.t0 < 0.12) and 'blink' or M.payoff
+    elseif M.react then r = M.react end
+    if not r then
+        M.blink_at = M.blink_at or now + 4
+        if now >= M.blink_at then M.blink_at, M.blink_until = now + 6.5, now + 0.14 end
+        if now < M.blink_until then r = 'blink' end
+    end
+    return M.dir .. ':' .. (r or '-'), r
+end
+
+function PP.mas_clear()
+    local M = PP.mas
+    if M.gui and M.world then
+        for _, w in ipairs(sr.Application.worlds() or {}) do
+            if w == M.world then pcall(sr.World.destroy_gui, M.world, M.gui) break end
+        end
+    end
+    M.gui, M.world, M.sig = nil, nil, nil
+end
+
+-- 25 x 25 cells of 2 panel units in the 50 x 50 emblem box (22, 44)
+local MAS_OFFSET = { left = { -1, 0 }, right = { 1, 0 }, up = { 0, -1 }, down = { 0, 1 },
+                     ['up-left'] = { -1, -1 }, ['up-right'] = { 1, -1 }, ['down-left'] = { -1, 1 },
+                     ['down-right'] = { 1, 1 }, center = { 0, 0 } }
+local MAS_HEART = { '.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...' }
+
+function PP.mas_draw(gui, react)
+    local g = PP.mas.geom
+    local Gui, Vector3, Vector2, Color = sr.Gui, sr.Vector3, sr.Vector2, sr.Color
+    local YEL, DK, INK = Color(255, 255, 231, 16), Color(255, 150, 136, 10), Color(255, 18, 17, 4)
+    local WHITE, RED, GLASS = Color(255, 233, 230, 220), Color(255, 255, 107, 91), Color(255, 26, 28, 31)
+    local function px(v) return math.floor(v + 0.5) end
+    local function r(x, y, w, h, c, z)          -- emblem-box units
+        local x0, x1 = px(g.ox + (22 + x) * g.s), px(g.ox + (22 + x + w) * g.s)
+        local y0, y1 = px(g.oy + (44 + y) * g.s), px(g.oy + (44 + y + h) * g.s)
+        if x1 <= x0 then x1 = x0 + 1 end
+        if y1 <= y0 then y1 = y0 + 1 end
+        Gui.rect(gui, Vector3(x0, g.height - y1, z or 954), Vector2(x1 - x0, y1 - y0), c)
+    end
+    r(23, 4, 2, 5, DK); r(22, 3, 4, 2, RED)                        -- antenna
+    r(4, 17, 4, 12, DK); r(42, 17, 4, 12, DK)                       -- ears
+    r(8, 8, 34, 34, YEL); r(8, 8, 34, 2, DK); r(8, 40, 34, 2, DK)  -- head
+    r(11, 14, 28, 17, INK, 955)                                    -- the screen face
+    local o = MAS_OFFSET[PP.mas.dir] or MAS_OFFSET.center
+    local ex, ey = o[1] * 3, o[2] * 2
+    local function eyes(draw)
+        draw(15 + ex, 18 + ey); draw(29 + ex, 18 + ey)
+    end
+    local function plain(x, y) r(x, y, 6, 8, WHITE, 956) end
+    local function line(x, y) r(x, y + 4, 6, 2, WHITE, 956) end
+    local function heart(x, y)
+        for row = 1, #MAS_HEART do
+            local run = nil
+            for col = 1, 8 do
+                local on = col <= 7 and MAS_HEART[row]:sub(col, col) == 'X'
+                if on and not run then run = col
+                elseif not on and run then r(x + run - 1, y + row - 1, col - run, 1, RED, 956); run = nil end
+            end
+        end
+    end
+    local function cross(x, y)
+        for k = 0, 2 do
+            r(x + k * 2, y + k * 2, 2, 2, WHITE, 956); r(x + 4 - k * 2, y + k * 2, 2, 2, WHITE, 956)
+        end
+    end
+    local function happy(x, y) r(x, y + 4, 2, 2, WHITE, 956); r(x + 2, y + 2, 2, 2, WHITE, 956); r(x + 4, y + 4, 2, 2, WHITE, 956) end
+    local mouth_open = false
+    if react == 'blink' then eyes(line)
+    elseif react == 'heart' then eyes(function(x, y) heart(x - 1, y + 1) end); mouth_open = true
+    elseif react == 'delighted' then eyes(happy); mouth_open = true
+    elseif react == 'dizzy' then eyes(cross)
+    else eyes(plain) end
+    if react == 'sparkle' then
+        r(3, 9, 2, 6, WHITE, 957); r(1, 11, 6, 2, WHITE, 957)
+        r(44, 30, 2, 6, WHITE, 957); r(42, 32, 6, 2, WHITE, 957)
+    end
+    if mouth_open or react == 'sparkle' then r(21, 33, 8, 4, INK) else r(20, 34, 10, 2, INK) end
+end
+
+function PP.mas_build(react)
+    local M = PP.mas
+    PP.mas_clear()
+    local gui = sr.World.create_screen_gui(ui.world, 'scale', 1, 1)
+    if not gui then return end
+    M.gui, M.world = gui, ui.world
+    local ok, why = pcall(PP.mas_draw, gui, react)
+    if not ok then
+        log('panel: mascot off for this session: ' .. tostring(why))
+        ui.mascot = false
+        PP.mas_clear()
+    end
+end
+
 local function clear_gui()
     if ui.gui and ui.world then
         for _, w in ipairs(sr.Application.worlds() or {}) do
             if w == ui.world then pcall(sr.World.destroy_gui, ui.world, ui.gui) break end
         end
     end
+    pcall(PP.mas_clear)
+    PP.mas.geom = nil
     ui.gui, ui.world, ui.signature, ui.regions = nil, nil, nil, {}
 end
 
@@ -1303,9 +1459,18 @@ local function draw(width, height)
     rect(0, 32, W, 1, C.LINE, 951)
     -- emblem box: the shield from the mod icon
     border(22, 44, 50, 50, C.TEXT, 952)
-    rect(33, 54, 28, 20, C.YELLOW, 952); rect(36, 74, 22, 4, C.YELLOW, 952)
-    rect(40, 78, 14, 4, C.YELLOW, 952); rect(44, 82, 6, 3, C.YELLOW, 952)
-    rect(38, 59, 18, 4, C.INK, 953); rect(42, 63, 10, 4, C.INK, 953)
+    if ui.mascot ~= false then
+        -- the mascot is a gui of its own (PP.mas_build); here only its box and where it sits
+        rect(23, 45, 48, 48, C.PANEL, 951)
+        PP.mas.geom = { ox = ox, oy = oy, s = s, height = height, cx = ox + 47 * s, cy = height - (oy + 69 * s) }
+        PP.mas.dirty = true
+        region('boop', 22, 44, 50, 50)
+    else
+        PP.mas.geom = nil
+        rect(33, 54, 28, 20, C.YELLOW, 952); rect(36, 74, 22, 4, C.YELLOW, 952)
+        rect(40, 78, 14, 4, C.YELLOW, 952); rect(44, 82, 6, 3, C.YELLOW, 952)
+        rect(38, 59, 18, 4, C.INK, 953); rect(42, 63, 10, 4, C.INK, 953)
+    end
     local tw = text('ARMORY', 86, 50, 34, C.TEXT)
     text('FORGE', 86 + tw + 12, 50, 34, C.YELLOW)
     text(MOD.swap_only and 'Passive Swap: give any armor another passive, at the game\'s values.'
@@ -1726,6 +1891,10 @@ local function draw(width, height)
         label('Game keyboard and mouse while open', RX, ry, nil, RIW)
         local gx = RX + button('blockin:on', 'Blocked', RX, ry + 20, nil, 30, true, PP.block_on()) + 8
         button('blockin:off', 'Let through', gx, ry + 20, nil, 30, true, not PP.block_on())
+        ry = ry + 64
+        label('Mascot', RX, ry, nil, RIW)
+        local mx = RX + button('mascot:on', 'On', RX, ry + 20, nil, 30, true, ui.mascot ~= false) + 8
+        button('mascot:off', 'Off', mx, ry + 20, nil, 30, true, ui.mascot == false)
         ry = ry + 64
         label('Language  /  语言', RX, ry, nil, RIW)
         local lx = RX
@@ -2248,6 +2417,13 @@ local function click(key)
         ui.lang = arg
         pcall(PP.save_pos)
         say(arg == 'zh' and '界面语言：简体中文' or 'Language: English')
+    elseif kind == 'boop' then
+        if ui.mascot ~= false then PP.mas_boop(now_s()); PP.mas.dirty = true end
+    elseif kind == 'mascot' then
+        ui.mascot = arg == 'on'
+        if not ui.mascot then pcall(PP.mas_clear) end
+        ui.version = ui.version + 1
+        pcall(PP.save_pos)
     elseif kind == 'blockin' then
         ui.block_input = arg == 'on'
         pcall(PP.save_pos)
@@ -2524,15 +2700,38 @@ function PP.hold_input(now)
     if G.filter and not G.filtering then input.filter_set(true); G.filtering = true end
     if now < G.next_check then return end
     G.next_check = now + 0.5
-    local take, other = {}, false
+    local take, other, foreign_mouse = {}, false, false
     for _, d in ipairs(input.raw_list()) do
         if d.page == 1 and (d.usage == 2 or d.usage == 6) then
-            if input.raw_ours(d) then take[#take + 1] = d else other = true end
+            if input.raw_ours(d) then
+                take[#take + 1] = d
+            else
+                other = true
+                if d.usage == 2 then
+                    foreign_mouse = true
+                    -- 6.3: that registration can't be taken back from here, so its window's own
+                    -- thread drops the WM_INPUT messages instead (the window filter, on that window too)
+                    if G.filter and d.target ~= nil and input.filter_install and not (G.raw_windows or {})[tostring(d.target)] then
+                        G.raw_windows = G.raw_windows or {}
+                        G.raw_windows[tostring(d.target)] = true
+                        pcall(input.filter_install, d.target)
+                    end
+                end
+            end
         end
     end
     if other then G.other = true end
+    local raw_eat = foreign_mouse and G.filter and input.filter_raw_ok and input.filter_raw_ok() or false
+    if raw_eat ~= (G.raw_eat or false) and G.filtering then
+        G.raw_eat = raw_eat
+        input.filter_set(true, raw_eat)
+    end
+    G.raw_eat = raw_eat
     if #take == 0 then
-        if not G.saved then G.state = other and 'raw input on another thread: left alone' or 'game has no raw input' end
+        if not G.saved then
+            G.state = (other and (raw_eat and 'raw mouse on another thread: dropped by the window filter'
+                                  or 'raw input on another thread: left alone')) or 'game has no raw input'
+        end
         return
     end
     local remove = {}
@@ -2551,6 +2750,7 @@ end
 function PP.give_input()
     local G = PP.gi
     if G.filtering then pcall(input.filter_set, false); G.filtering = false end
+    G.raw_eat = false
     G.next_check = 0
     if not G.saved then return end
     local list = {}
@@ -2596,8 +2796,11 @@ function PP.input_desc()
     local parts = { 'game input while open: ' .. (PP.block_on() and 'blocked' or 'not blocked') .. ' (' .. tostring(G.state) .. ')' }
     if G.filter_failed then parts[#parts + 1] = 'no window filter: ' .. G.filter_failed end
     if input and input.filter_stats then
-        local ok, keys, buttons = pcall(input.filter_stats)
-        if ok and keys then parts[#parts + 1] = 'dropped: ' .. keys .. ' key presses, ' .. buttons .. ' clicks' end
+        local ok, keys, buttons, raw = pcall(input.filter_stats)
+        if ok and keys then
+            parts[#parts + 1] = 'dropped: ' .. keys .. ' key presses, ' .. buttons .. ' clicks' ..
+                                ((raw or 0) > 0 and (', ' .. raw .. ' raw input messages') or '')
+        end
     end
     local ok, list = pcall(function() return input.raw_list and input.raw_list() or {} end)
     local seen = {}
@@ -2671,6 +2874,7 @@ local function mouse()
     local notches = PP.filter_wheel()
     if x < 0 or y < 0 or x >= cw or y >= ch then return end
     ui.hover = hit(sx, height - sy, true)
+    if ui.mascot ~= false then PP.mas_aim(sx, height - sy) end
     local sc = ui.scrolling
     if sc and sx >= sc.x and sx < sc.x + sc.w and height - sy >= sc.y and height - sy < sc.y + sc.h then
         if notches then
@@ -2745,7 +2949,7 @@ end
 
 function PP.focusable(r)
     local kind = r.key:match('^([%w_]+)')
-    return r.enabled and kind ~= 'panel' and kind ~= 'drag' and kind ~= 'scroll' and kind ~= 'search'
+    return r.enabled and kind ~= 'panel' and kind ~= 'drag' and kind ~= 'scroll' and kind ~= 'search' and kind ~= 'boop'
 end
 function PP.find_region(key)
     for _, r in ipairs(ui.regions) do if r.key == key then return r end end
@@ -3021,6 +3225,17 @@ local function panel_frame(now)
             PP.nav(d)
         end
     end
+    -- the mascot's own gui: redrawn when the eyes or the face change, after the panel's
+    -- (so it stays on top when the panel was just rebuilt)
+    if ui.mascot ~= false and PP.mas.geom and ui.world then
+        local sig, react = PP.mas_state(now)
+        if PP.mas.dirty or sig ~= PP.mas.sig or not PP.mas.gui then
+            PP.mas_build(react)
+            PP.mas.sig, PP.mas.dirty = sig, false
+        end
+    elseif PP.mas.gui then
+        PP.mas_clear()
+    end
 end
 
 -- ---------------------------------------------------------------- quick-swap toast
@@ -3125,8 +3340,33 @@ local function hotkey_pressed(name)
     return down and not was and focused
 end
 
+-- 6.3: loadout.ini edited on disk while the game runs (deleted stacks, a web-builder file
+-- dropped in) is picked up within ~2 s; before, only a restart reloaded it. It goes through
+-- PP.replace, so it can be undone, and everything it no longer lists is put back to the
+-- game's own values.
+function PP.watch_file(now)
+    if now < (PP.watch_at or 0) then return end
+    PP.watch_at = now + 2
+    if save_at or not LOADOUT then return end              -- our own change is still waiting to be saved
+    local path = save_path()
+    local text = path and read_file(path)
+    if not text or text == state.disk_text or text == PP.bad_text then PP.seen_text = nil; return end
+    if text ~= PP.seen_text then PP.seen_text = text; return end    -- same text on two checks in a row: the editor is done writing
+    local ok, l = pcall(parse_loadout, text)
+    if not ok or not l then
+        PP.bad_text = text
+        log('loadout.ini changed on disk but could not be read; keeping the loadout in the game')
+        return
+    end
+    state.disk_text, PP.bad_text, PP.seen_text = text, nil, nil
+    l.name = l.name or LOADOUT.name
+    PP.replace(l, 'loadout.ini changed: reloaded (' .. #l.profiles .. ' armor stack' .. (#l.profiles == 1 and '' or 's') .. ')')
+    log('loadout.ini changed on disk: reloaded, ' .. #l.profiles .. ' stack(s)')
+end
+
 panel_tick = function(now)
     if not input or not sr then return end
+    if state.phase == 'ready' then pcall(PP.watch_file, now) end
     if hotkey_pressed(hotkey()) then open_panel(not ui.open) end
     local okp, has = pcall(PP.pad_read)
     PP.has_pad = okp and has
