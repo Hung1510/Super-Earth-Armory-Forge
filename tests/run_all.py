@@ -38,6 +38,7 @@ SUITES = [
     ("test_mascot.py", "the panel mascot: eyes follow the cursor, boop, dizzy, off switch"),
     ("test_hot_reload.py", "loadout.ini edited while the game runs is reloaded, undoable"),
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
+    ("test_recipes.py", "recipes: named passive combos, saved to my-recipes.txt"),
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
     ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),

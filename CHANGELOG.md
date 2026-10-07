@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.6 (2026-10-07)
+Full edition (the Passive Swap edition is unchanged; it gets 6.5's faster start):
+- **Recipes:** a new **RECIPES** row in every armor tab. A recipe is a named set of passives, for example *Medic Tank = Fortified + Unflinching + Extra Padding + Supplemental Adrenaline*. Pick one and click **Add to stack** (ticks them all) or **Only this** (the stack becomes exactly that); **Undo** takes it back. Five come with the mod (Medic Tank, Ghost, Demolitionist, Gunner, Survivor). **+ Save ticked passives as recipe** keeps what you have ticked as your own; rename or delete it any time. Yours are saved in `ArmoryForge\my-recipes.txt` (one line each: `Name | Passive | Passive`), and `loadout.ini` is unchanged. A recipe never changes values, only ticks.
+
 ## 6.5 (2026-10-07)
 Both editions (full and Passive Swap):
 - **Faster start:** the search for the game's passive table now reads memory four bytes at a time instead of one, about 2.5x faster in a benchmark, so the mod finishes its first search sooner and takes less of each frame while it runs. If a game build ever stores the table off that grid, the mod notices it found nothing and searches byte by byte, as before.

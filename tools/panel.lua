@@ -716,6 +716,80 @@ function PP.save_user()
     return write_file(path, table.concat(L, '\r\n'))
 end
 
+-- ---------------------------------------------------------------- recipes
+-- A recipe is a named set of armor passives. Applying one ticks them in the current stack,
+-- so nothing new is stored in loadout.ini. The player's own are kept in
+-- ArmoryForge\my-recipes.txt, one per line: Name | Passive | Passive | ...
+PP.RECIPES = {
+    { 'Medic Tank',     { 'Fortified', 'Unflinching', 'Extra Padding', 'Supplemental Adrenaline' } },
+    { 'Ghost',          { 'Scout', 'Reduced Signature', 'Feet First' } },
+    { 'Demolitionist',  { 'Engineering Kit', 'Integrated Explosives', 'Blunt-Force Mitigation' } },
+    { 'Gunner',         { 'Siege-Ready', 'Gunslinger', 'Rock-Solid' } },
+    { 'Survivor',       { 'Inflammable', 'Advanced Filtration', 'Acclimated', 'Peak Physique' } },
+}
+function PP.recipes_file() return 'my-recipes.txt' end
+
+function PP.load_recipes()
+    PP.rec_user = {}
+    local text = read_saved(PP.recipes_file())
+    if not text then return end
+    for line in (text .. '\n'):gmatch('([^\n]*)\n') do
+        line = line:gsub('\r$', '')
+        if line ~= '' and not line:match('^%s*;') then
+            local parts = {}
+            for part in (line .. '|'):gmatch('([^|]*)|') do
+                part = part:match('^%s*(.-)%s*$')
+                if part ~= '' then parts[#parts + 1] = part end
+            end
+            if #parts >= 2 then
+                local rest = {}
+                for k = 2, #parts do rest[#rest + 1] = parts[k] end
+                PP.rec_user[#PP.rec_user + 1] = { name = parts[1], passives = rest }
+            end
+        end
+    end
+end
+
+function PP.save_recipes()
+    local path = forge_file(PP.recipes_file())
+    if not path then return false end
+    local L = { '; Super Earth Armory Forge: your recipes, saved by the in-game panel. Name | Passive | Passive | ...' }
+    for _, r in ipairs(PP.rec_user) do
+        L[#L + 1] = r.name .. ' | ' .. table.concat(r.passives, ' | ')
+    end
+    L[#L + 1] = ''
+    return write_file(path, table.concat(L, '\r\n'))
+end
+
+-- built-in recipes, then the player's: { kind, i, name, passives = { names } }
+function PP.rec_entries()
+    if not PP.rec_user then PP.load_recipes() end
+    local list = {}
+    for i, r in ipairs(PP.RECIPES) do list[#list + 1] = { kind = 'builtin', i = i, name = r[1], passives = r[2] } end
+    for i, r in ipairs(PP.rec_user) do list[#list + 1] = { kind = 'user', i = i, name = r.name, passives = r.passives } end
+    return list
+end
+
+-- the passive ids of a recipe that this game build knows, in catalog order
+function PP.rec_ids(entry)
+    local want = {}
+    for _, nm in ipairs(entry.passives) do want[nm:lower()] = true end
+    local ids = {}
+    for _, c in ipairs(CAT_LIST) do if want[c.name:lower()] then ids[#ids + 1] = c.id end end
+    return ids
+end
+
+function PP.rec_apply(p, entry, only)
+    local ids = PP.rec_ids(entry)
+    if only then p.enabled = {} end
+    local n = 0
+    for _, id in ipairs(ids) do
+        if id ~= p.perk then p.enabled[id] = true; n = n + 1 end
+    end
+    ui.sel = 'recipes'
+    changed(p.perk, (only and 'Stack is now ' or 'Added ') .. entry.name .. ': ' .. n .. ' passive(s)')
+end
+
 -- the list shown in the Presets tab: { kind = 'installed' | 'builtin' | 'user', i, name }
 function PP.entries()
     if not PP.user then PP.load_user() end
@@ -2097,6 +2171,16 @@ local function draw(width, height)
              ui.sel == 'weight' and C.TEXT or p.weight and C.YELLOW or C.MUTED, IW - sw0 - 16)
         region(wkey, LX + 1, y, LW - 2, RH)
         y = y + RH
+        if not MOD.swap_only then
+            local rkey = 'sel:recipes'
+            if ui.sel == 'recipes' then rect(LX + 1, y, LW - 2, RH, C.ROW_HI, 951); rect(LX + 1, y, 3, RH, C.YELLOW, 952)
+            elseif ui.hover == rkey then rect(LX + 1, y, LW - 2, RH, C.ROW, 951) end
+            border(IX + 2, y + 5, sw0, 14, C.YELLOW, 952)
+            text('RCP', IX + 2 + sw0 / 2, y + 7, 10, C.YELLOW, nil, 'center')
+            text('RECIPES', IX + sw0 + 12, y + 5, 14, ui.sel == 'recipes' and C.TEXT or C.MUTED, IW - sw0 - 16)
+            region(rkey, LX + 1, y, LW - 2, RH)
+            y = y + RH
+        end
         local base_key = 'sel:' .. p.perk
         if ui.sel == p.perk then rect(LX + 1, y, LW - 2, RH, C.ROW_HI, 951); rect(LX + 1, y, 3, RH, C.YELLOW, 952)
         elseif ui.hover == base_key then rect(LX + 1, y, LW - 2, RH, C.ROW, 951) end
@@ -2261,6 +2345,56 @@ local function draw(width, height)
                     ax = ax + button('aw:' .. w[1], w[2], ax, y2 + 30, each, 30, true, on) + 8
                 end
             end
+        elseif ui.sel == 'recipes' and not MOD.swap_only then
+            local entries = PP.rec_entries()
+            ui.rsel = math.max(1, math.min(ui.rsel or 1, #entries))
+            head(RX, TOP + 14, 'Recipes', 'Armor passive combos', RIW)
+            local y2 = wrap('Pick a recipe to tick all its passives at once. Save your own from what is ticked now.',
+                            RX, TOP + 54, 12, C.MUTED, RIW, 2) + 6
+            local by0 = BOT - 172
+            local fit = math.max(2, math.floor((by0 - 150 - y2) / 28))
+            local pages = math.max(1, math.ceil(#entries / fit))
+            ui.rpage = math.max(0, math.min(ui.rpage or 0, pages - 1))
+            for k = ui.rpage * fit + 1, math.min(#entries, ui.rpage * fit + fit) do
+                local e = entries[k]
+                local key, chosen = 'rpick:' .. k, k == ui.rsel
+                if chosen then rect(RX, y2, RIW, 26, C.ROW_HI, 951); rect(RX, y2, 3, 26, C.YELLOW, 952)
+                elseif ui.hover == key then rect(RX, y2, RIW, 26, C.ROW, 951)
+                else rect(RX, y2, RIW, 26, C.ROW, 950) end
+                local nm = ui.naming and ui.naming.rec and e.kind == 'user' and ui.naming.i == e.i
+                text(nm and (ui.naming.text .. '_') or up(e.name), RX + 12, y2 + 6, 13,
+                     nm and (ui.naming.fresh and C.MUTED or C.YELLOW) or (chosen and C.TEXT or C.MUTED), RIW - 150)
+                text(#PP.rec_ids(e) .. ' PASSIVES' .. (e.kind == 'user' and '  YOURS' or ''), RX + RIW - 10, y2 + 8, 10,
+                     e.kind == 'user' and C.YELLOW or C.DIM, 130, 'right')
+                region(key, RX, y2, RIW, 26)
+                y2 = y2 + 28
+            end
+            if pages > 1 then
+                local px0 = RX + RIW - 100
+                px0 = px0 + button('rpage:-1', '<', px0, TOP + 14, 30, 26, ui.rpage > 0) + 6
+                text((ui.rpage + 1) .. '/' .. pages, px0 + 14, TOP + 20, 12, C.MUTED, 40, 'center')
+                button('rpage:1', '>', px0 + 34, TOP + 14, 30, 26, ui.rpage < pages - 1)
+            end
+            local sel_e = entries[ui.rsel]
+            local ay = by0 - 40
+            button('rsave', '+ Save ticked passives as recipe', RX, ay - 42, RIW, 32, n_on > 0)
+            if sel_e then
+                local names, base_in = {}, false
+                for _, id in ipairs(PP.rec_ids(sel_e)) do
+                    if id == p.perk then base_in = true else names[#names + 1] = CAT[id].name end
+                end
+                wrap(#names == 0 and 'None of these passives are in this game build.' or
+                     (table.concat(names, ', ') .. (base_in and ('  (' .. CAT[p.perk].name .. ' is this stack\'s base already)') or '')),
+                     RX, ay - 42 - 56, 12, C.TEXT, RIW, 3)
+                local ax = RX
+                ax = ax + button('rapply:add', 'Add to stack', ax, ay, nil, 32, #names > 0, true) + 8
+                ax = ax + button('rapply:only', 'Only this', ax, ay, nil, 32, #names > 0) + 8
+                if sel_e.kind == 'user' then
+                    ax = ax + button('rname', 'Rename', ax, ay, nil, 32, true) + 8
+                    local sure = ui.confirm and ui.confirm.kind == 'rdel'
+                    button('rdel', sure and 'Click again' or 'Delete', ax, ay, nil, 32, true, false, sure and C.BAD or nil)
+                end
+            end
         elseif ui.sel == 'summary' then
             local list = PP.summary_rows(p)
             head(RX, TOP + 14, 'Stack summary', CAT[p.perk].name .. ' armor', RIW)
@@ -2379,10 +2513,10 @@ local function finish_naming(keep)
     ui.version = ui.version + 1
     if not nm or not keep then return end
     local name = PP.clean_name(nm.text)
-    local entry = PP.user[nm.i]
+    local entry = nm.rec and PP.rec_user[nm.i] or PP.user[nm.i]
     if name and entry then
         entry.name = name
-        PP.save_user()
+        if nm.rec then PP.save_recipes() else PP.save_user() end
         say('Saved as "' .. name .. '"')
     end
 end
@@ -2444,7 +2578,7 @@ local function click(key)
             ui.tab, ui.sel = math.max(1, ui.tab - 1), nil
             changed(p.perk, 'Removed the ' .. CAT[p.perk].name .. ' stack (the game\'s own values are back)')
         end
-    elseif kind == 'sel' and (arg == 'summary' or arg == 'weight') then ui.sel = arg; ui.value = nil
+    elseif kind == 'sel' and (arg == 'summary' or arg == 'weight' or (arg == 'recipes' and not MOD.swap_only)) then ui.sel = arg; ui.value = nil
     elseif kind == 'sel' and n then ui.sel = n; ui.value = nil
     elseif kind == 'tick' and n and p then toggle(p, n)
     elseif kind == 'policy' and p then p.conflicts = arg; changed(p.perk)
@@ -2484,6 +2618,39 @@ local function click(key)
         end
     elseif kind == 'copy' and not MOD.swap_only then PP.copy_code()
     elseif kind == 'paste' and not MOD.swap_only then PP.paste_code()
+    -- recipes
+    elseif kind == 'rpick' and n then ui.rsel = n
+    elseif kind == 'rpage' and n then ui.rpage = (ui.rpage or 0) + n
+    elseif kind == 'rapply' and p and not MOD.swap_only then
+        local e = PP.rec_entries()[ui.rsel or 1]
+        if e then PP.rec_apply(p, e, arg == 'only') end
+    elseif kind == 'rsave' and p and not MOD.swap_only then
+        local ids = {}
+        for _, c in ipairs(CAT_LIST) do if p.enabled[c.id] and c.id ~= p.perk then ids[#ids + 1] = c.name end end
+        if #ids == 0 then say('Tick some passives first'); return end
+        PP.rec_entries()
+        local base, k = 'My recipe', #PP.rec_user + 1
+        local taken = {}
+        for _, u in ipairs(PP.rec_user) do taken[u.name] = true end
+        for _, u in ipairs(PP.RECIPES) do taken[u[1]] = true end
+        while taken[base .. ' ' .. k] do k = k + 1 end
+        PP.rec_user[#PP.rec_user + 1] = { name = base .. ' ' .. k, passives = ids }
+        PP.save_recipes()
+        ui.rsel = #PP.RECIPES + #PP.rec_user
+        ui.rpage = 1e6                                     -- clamped to the last page when drawn
+        ui.naming = { i = #PP.rec_user, text = base .. ' ' .. k, fresh = true, rec = true }
+        say('Saved. Type a name for it, or press Enter to keep "' .. base .. ' ' .. k .. '".', 5)
+    elseif kind == 'rname' and ui.rsel then
+        local e = PP.rec_entries()[ui.rsel]
+        if e and e.kind == 'user' then ui.naming = { i = e.i, text = e.name, fresh = true, rec = true } end
+    elseif kind == 'rdel' and ui.rsel then
+        local e = PP.rec_entries()[ui.rsel]
+        if e and e.kind == 'user' and confirm('rdel') then
+            table.remove(PP.rec_user, e.i)
+            PP.save_recipes()
+            ui.naming, ui.rsel = nil, math.max(1, ui.rsel - 1)
+            say('Deleted "' .. e.name .. '"')
+        end
     -- presets
     elseif kind == 'pre' then
         local k, i = arg:match('^(%a+):(%d+)$')
@@ -2918,7 +3085,7 @@ if not PP.bit then
     local ok, b = pcall(require, 'bit')
     PP.bit = ok and b or nil
 end
-PP.LIST_ROW = { sel = true, tick = true, addpick = true, swap = true, pre = true }
+PP.LIST_ROW = { sel = true, tick = true, addpick = true, swap = true, pre = true, rpick = true }
 
 -- read the controller once per frame; sticks become D-pad / virtual buttons
 function PP.pad_read()
