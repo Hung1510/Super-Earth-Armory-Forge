@@ -1,0 +1,740 @@
+{
+  "about": "Super Earth Armory Forge booster dump. Send this file and strings-en.json to the mod author.",
+  "game_dir": "E:\\SteamLibrary\\steamapps\\common\\Helldivers 2",
+  "known_booster_names": [
+    "AbilityId_avatar_melee_booster_muscle_enhancement",
+    "Booster",
+    "BoosterCategory",
+    "BoosterCategory_Ammo",
+    "BoosterCategory_Count",
+    "BoosterCategory_Equipment",
+    "BoosterCategory_None",
+    "BoosterCategory_Seasonal",
+    "BoosterCategory_Stims",
+    "BoosterCategory_Stratagem",
+    "BoosterComponent",
+    "BoosterType",
+    "BoosterType_Persistent",
+    "BoosterType_Triggered",
+    "Booster_Count",
+    "Booster_FastExtraction",
+    "Booster_FlexibleReinforcementBudget",
+    "Booster_HellpodSpaceOptimization",
+    "Booster_IncreasedReinforcementBudget",
+    "Booster_LocalizationConfusion",
+    "Booster_MuscleEnhancement",
+    "Booster_None",
+    "Booster_Stamina",
+    "Booster_UAVRecon",
+    "Booster_Vitality",
+    "DamageInfoType_Ability_Avatar_Melee_Booster_Muscle_Enhancement"
+  ],
+  "known_booster_enum_in_file_order": [
+    "Booster_None",
+    "Booster_Vitality",
+    "Booster_Stamina",
+    "Booster_MuscleEnhancement",
+    "Booster_UAVRecon",
+    "Booster_IncreasedReinforcementBudget",
+    "Booster_FlexibleReinforcementBudget",
+    "Booster_HellpodSpaceOptimization",
+    "Booster_LocalizationConfusion",
+    "Booster_FastExtraction",
+    "Booster_Count"
+  ],
+  "booster_enum": [
+    {
+      "value": 0,
+      "name": "Booster_362a"
+    },
+    {
+      "value": 1,
+      "name": "Booster_3637"
+    },
+    {
+      "value": 2,
+      "name": "Booster_3648"
+    },
+    {
+      "value": 3,
+      "name": "Booster_3658"
+    },
+    {
+      "value": 4,
+      "name": "Booster_3672"
+    },
+    {
+      "value": 5,
+      "name": "Booster_3683"
+    },
+    {
+      "value": 6,
+      "name": "Booster_36a8"
+    },
+    {
+      "value": 7,
+      "name": "Booster_36cc"
+    },
+    {
+      "value": 8,
+      "name": "Booster_36ed"
+    },
+    {
+      "value": 9,
+      "name": "Booster_370b"
+    },
+    {
+      "value": 10,
+      "name": "Booster_3722"
+    },
+    {
+      "value": 11,
+      "name": "Booster_373d"
+    },
+    {
+      "value": 12,
+      "name": "Booster_3751"
+    },
+    {
+      "value": 13,
+      "name": "Booster_3763"
+    },
+    {
+      "value": 14,
+      "name": "Booster_377e"
+    },
+    {
+      "value": 15,
+      "name": "Booster_3791"
+    },
+    {
+      "value": 16,
+      "name": "Booster_37aa"
+    },
+    {
+      "value": 17,
+      "name": "Booster_37c8"
+    },
+    {
+      "value": 18,
+      "name": "Booster_37da"
+    },
+    {
+      "value": 19,
+      "name": "Booster_37ec"
+    },
+    {
+      "value": 20,
+      "name": "Booster_3803"
+    },
+    {
+      "value": 21,
+      "name": "Booster_3813"
+    }
+  ],
+  "match_phrases": [
+    "fast extraction",
+    "flexible reinforcement budget",
+    "hellpod space optimization",
+    "increased reinforcement budget",
+    "localization confusion",
+    "muscle enhancement",
+    "uav recon",
+    "booster"
+  ],
+  "enums": {
+    "Booster": {
+      "name": "Booster",
+      "name_offset": 14369,
+      "name_length": 7,
+      "comment": "3829",
+      "comment_offset": 14377,
+      "flags": {
+        "has_subdata": false,
+        "is_external": false,
+        "is_union": false,
+        "verify_external_size_align": false
+      },
+      "storage": "ENUM_UINT32",
+      "values": [
+        {
+          "name": "Booster_362a",
+          "name_offset": 13866,
+          "name_length": 12,
+          "value": 0
+        },
+        {
+          "name": "Booster_3637",
+          "name_offset": 13879,
+          "name_length": 16,
+          "value": 1
+        },
+        {
+          "name": "Booster_3648",
+          "name_offset": 13896,
+          "name_length": 15,
+          "value": 2
+        },
+        {
+          "name": "Booster_3658",
+          "name_offset": 13912,
+          "name_length": 25,
+          "value": 3
+        },
+        {
+          "name": "Booster_3672",
+          "name_offset": 13938,
+          "name_length": 16,
+          "value": 4
+        },
+        {
+          "name": "Booster_3683",
+          "name_offset": 13955,
+          "name_length": 36,
+          "value": 5
+        },
+        {
+          "name": "Booster_36a8",
+          "name_offset": 13992,
+          "name_length": 35,
+          "value": 6
+        },
+        {
+          "name": "Booster_36cc",
+          "name_offset": 14028,
+          "name_length": 32,
+          "value": 7
+        },
+        {
+          "name": "Booster_36ed",
+          "name_offset": 14061,
+          "name_length": 29,
+          "value": 8
+        },
+        {
+          "name": "Booster_370b",
+          "name_offset": 14091,
+          "name_length": 22,
+          "value": 9
+        },
+        {
+          "name": "Booster_3722",
+          "name_offset": 14114,
+          "name_length": 26,
+          "value": 10
+        },
+        {
+          "name": "Booster_373d",
+          "name_offset": 14141,
+          "name_length": 19,
+          "value": 11
+        },
+        {
+          "name": "Booster_3751",
+          "name_offset": 14161,
+          "name_length": 17,
+          "value": 12
+        },
+        {
+          "name": "Booster_3763",
+          "name_offset": 14179,
+          "name_length": 26,
+          "value": 13
+        },
+        {
+          "name": "Booster_377e",
+          "name_offset": 14206,
+          "name_length": 18,
+          "value": 14
+        },
+        {
+          "name": "Booster_3791",
+          "name_offset": 14225,
+          "name_length": 24,
+          "value": 15
+        },
+        {
+          "name": "Booster_37aa",
+          "name_offset": 14250,
+          "name_length": 29,
+          "value": 16
+        },
+        {
+          "name": "Booster_37c8",
+          "name_offset": 14280,
+          "name_length": 17,
+          "value": 17
+        },
+        {
+          "name": "Booster_37da",
+          "name_offset": 14298,
+          "name_length": 17,
+          "value": 18
+        },
+        {
+          "name": "Booster_37ec",
+          "name_offset": 14316,
+          "name_length": 22,
+          "value": 19
+        },
+        {
+          "name": "Booster_3803",
+          "name_offset": 14339,
+          "name_length": 15,
+          "value": 20
+        },
+        {
+          "name": "Booster_3813",
+          "name_offset": 14355,
+          "name_length": 13,
+          "value": 21
+        }
+      ]
+    },
+    "BoosterCategory": {
+      "name": "BoosterCategory",
+      "name_offset": 151508,
+      "name_length": 15,
+      "flags": {
+        "has_subdata": false,
+        "is_external": false,
+        "is_union": false,
+        "verify_external_size_align": false
+      },
+      "storage": "ENUM_UINT32",
+      "values": [
+        {
+          "name": "BoosterCategory_24f31",
+          "name_offset": 151345,
+          "name_length": 20,
+          "value": 0
+        },
+        {
+          "name": "BoosterCategory_24f46",
+          "name_offset": 151366,
+          "name_length": 25,
+          "value": 1
+        },
+        {
+          "name": "BoosterCategory_24f60",
+          "name_offset": 151392,
+          "name_length": 25,
+          "value": 2
+        },
+        {
+          "name": "BoosterCategory_24f7a",
+          "name_offset": 151418,
+          "name_length": 20,
+          "value": 3
+        },
+        {
+          "name": "BoosterCategory_24f8f",
+          "name_offset": 151439,
+          "name_length": 21,
+          "value": 4
+        },
+        {
+          "name": "BoosterCategory_24fa5",
+          "name_offset": 151461,
+          "name_length": 24,
+          "value": 5
+        },
+        {
+          "name": "BoosterCategory_24fbe",
+          "name_offset": 151486,
+          "name_length": 21,
+          "value": 6
+        }
+      ]
+    }
+  },
+  "types": {
+    "BoosterComponent": {
+      "name": "BoosterComponent",
+      "name_offset": 634728,
+      "name_length": 16,
+      "flags": {
+        "has_subdata": false,
+        "is_external": false,
+        "is_union": false,
+        "verify_external_size_align": true
+      },
+      "size": 4,
+      "alignment": 4,
+      "members": [
+        {
+          "name": "9af59",
+          "name_offset": 634713,
+          "name_length": 5,
+          "comment": "9af5f",
+          "comment_offset": 634719,
+          "comment_length": 8,
+          "type_flags": {
+            "atom": "POD",
+            "storage": "UINT32",
+            "union_arrayinfo_bfinfo": {
+              "bit_offset": 0,
+              "bits": 0,
+              "inline_array_len": 0
+            }
+          },
+          "type": "(builtin)",
+          "size": 4,
+          "alignment": 4,
+          "offset": 0,
+          "flags": {
+            "has_subdata": true,
+            "is_external": true,
+            "is_union": false,
+            "verify_external_size_align": false
+          }
+        }
+      ],
+      "comment": "9af79",
+      "comment_offset": 634745,
+      "comment_length": 10
+    }
+  },
+  "entities": [],
+  "entity_count": 1909,
+  "files": [
+    {
+      "name": "content/audio/passive_booster_hellpod_firebomb",
+      "type": "wwise_bank"
+    },
+    {
+      "name": "content/audio/passive_booster_hellpod_smokepods",
+      "type": "wwise_bank"
+    },
+    {
+      "name": "content/audio/passive_booster_hellpod_stun",
+      "type": "wwise_bank"
+    },
+    {
+      "name": "content/ui/shared/resources/generated_icons/booster_icons",
+      "type": "xaml"
+    },
+    {
+      "name": "content/ui/shared/xaml/component/generated/component_booster",
+      "type": "xaml"
+    }
+  ],
+  "files_total": 107667,
+  "files_with_known_names": 50273,
+  "strings": [
+    {
+      "id": 111908364,
+      "hex": "0x06ab960c",
+      "en": "HELLPOD SPACE OPTIMIZATION",
+      "ja": "ヘルポッド内収納の最適化"
+    },
+    {
+      "id": 143999691,
+      "hex": "0x089542cb",
+      "en": "NONE"
+    },
+    {
+      "id": 184509412,
+      "hex": "0x0aff63e4",
+      "en": "NONE"
+    },
+    {
+      "id": 193245792,
+      "hex": "0x0b84b260",
+      "en": "BOOSTER PACK ADDED TO INVENTORY"
+    },
+    {
+      "id": 270165902,
+      "hex": "0x101a678e",
+      "en": "UAV RECON SUPPORT",
+      "ja": "無人機偵察支援"
+    },
+    {
+      "id": 309737129,
+      "hex": "0x127636a9",
+      "en": "BOOSTER",
+      "ja": "ブースター"
+    },
+    {
+      "id": 322444584,
+      "hex": "0x13381d28",
+      "en": "UAV RECON BOOSTER",
+      "ja": "UAV偵察ブースター"
+    },
+    {
+      "id": 345504525,
+      "hex": "0x1497fb0d",
+      "en": "INCREASED REINFORCEMENT BUDGET",
+      "ja": "増援予算の増加"
+    },
+    {
+      "id": 437395298,
+      "hex": "0x1a121f62",
+      "en": "NONE",
+      "ja": "なし"
+    },
+    {
+      "id": 445309889,
+      "hex": "0x1a8ae3c1",
+      "en": "\u003ci=1\u003e#BOOSTER is active\u003c/i\u003e during missions.",
+      "ja": "ミッション中\u003ci=1\u003e#BOOSTERが有効\u003c/i\u003e。"
+    },
+    {
+      "id": 493589749,
+      "hex": "0x1d6b94f5",
+      "en": "Booster"
+    },
+    {
+      "id": 570461792,
+      "hex": "0x22008e60",
+      "en": "Muscle Enhancement",
+      "ja": "筋力強化"
+    },
+    {
+      "id": 619638262,
+      "hex": "0x24eeedf6",
+      "en": "None",
+      "ja": "なし"
+    },
+    {
+      "id": 839360228,
+      "hex": "0x32079ee4",
+      "en": "NONE"
+    },
+    {
+      "id": 888961443,
+      "hex": "0x34fc79a3",
+      "en": "\u003ci=1\u003eDefense Campaigns\u003c/i\u003e cannot originate from this planet. The \u003ci=1\u003e#BOOSTER\u003c/i\u003e Booster is automatically active for all missions.",
+      "ja": "\u003ci=1\u003e防衛キャンペーン\u003c/i\u003eはこの惑星から発生しない。全ミッションでブースター\u003ci=1\u003e#BOOSTER\u003c/i\u003eが自動的に有効になる。"
+    },
+    {
+      "id": 951033156,
+      "hex": "0x38af9d44",
+      "en": "FLEXIBLE REINFORCEMENT BUDGET",
+      "ja": "柔軟な増援予算"
+    },
+    {
+      "id": 1184670874,
+      "hex": "0x469ca49a",
+      "en": "NONE",
+      "ja": "なし"
+    },
+    {
+      "id": 1185294009,
+      "hex": "0x46a626b9",
+      "en": "LOCALIZATION CONFUSION",
+      "ja": "位置情報障害"
+    },
+    {
+      "id": 1522628849,
+      "hex": "0x5ac178f1",
+      "en": "No Booster",
+      "ja": "ブースターなし"
+    },
+    {
+      "id": 1550301204,
+      "hex": "0x5c67b814",
+      "en": "BOOSTERS"
+    },
+    {
+      "id": 1604906974,
+      "hex": "0x5fa8efde",
+      "en": "ALL BOOSTERS",
+      "ja": "オールブースターズ"
+    },
+    {
+      "id": 1730119987,
+      "hex": "0x671f8933",
+      "en": "BOOSTER"
+    },
+    {
+      "id": 1748003784,
+      "hex": "0x68306bc8",
+      "en": "UAV Recon Booster",
+      "ja": "UAV偵察ブースター"
+    },
+    {
+      "id": 1789012940,
+      "hex": "0x6aa22bcc",
+      "en": "NONE"
+    },
+    {
+      "id": 1941128898,
+      "hex": "0x73b346c2",
+      "en": "NONE"
+    },
+    {
+      "id": 2039690901,
+      "hex": "0x79933695",
+      "en": "NONE"
+    },
+    {
+      "id": 2047743615,
+      "hex": "0x7a0e167f",
+      "en": "BOOSTER PACK",
+      "ja": "ブースターパック"
+    },
+    {
+      "id": 2245752706,
+      "hex": "0x85db7782",
+      "en": "MUSCLE ENHANCEMENT",
+      "ja": "筋力強化"
+    },
+    {
+      "id": 2300734266,
+      "hex": "0x89226b3a",
+      "en": "An automated, pre-mission injection of this nerve-blocker/stimulant slurry will keep a Helldiver squad liberating longer, even under intense strain. \n\nNote: Originally developed by PermaCura as a panacea for the pain of childbirth, this stamina booster is better known for its prominent role in helping Super Earth athletes beat countless galaxy records."
+    },
+    {
+      "id": 2418712607,
+      "hex": "0x902aa01f",
+      "en": "NONE"
+    },
+    {
+      "id": 2462816897,
+      "hex": "0x92cb9a81",
+      "en": "Booster Pack",
+      "ja": "ブースターパック"
+    },
+    {
+      "id": 2589774000,
+      "hex": "0x9a5cd0b0",
+      "en": "Boosters",
+      "ja": "ブースター"
+    },
+    {
+      "id": 2628500700,
+      "hex": "0x9cabbcdc",
+      "en": "Equip a booster to increase the chance of a successful liberation! Boosters apply to your entire squad.",
+      "ja": "ブースターを装備して解放の成功確率を上げよう！ ブースターは全隊員に適用される。"
+    },
+    {
+      "id": 2887030368,
+      "hex": "0xac149660",
+      "en": "NONE",
+      "ja": "なし"
+    },
+    {
+      "id": 2912407889,
+      "hex": "0xad97d151",
+      "en": "\u003ci=1\u003e#V_ONE\u003c/i\u003e Booster is automatically active for all missions.",
+      "ja": "全ミッションでブースター\u003ci=1\u003e#V_ONE\u003c/i\u003eが自動的に有効になる。"
+    },
+    {
+      "id": 2968940991,
+      "hex": "0xb0f671bf",
+      "en": "Boosters are limited-use enhancements provided by the Super Earth arsenal. Available for requisition at a terminal near you, boosters range from combat drugs to specialized equipment and even sometimes include favors from Super Earth command."
+    },
+    {
+      "id": 3042834795,
+      "hex": "0xb55df96b",
+      "en": "BOOSTER",
+      "ja": "ブースター"
+    },
+    {
+      "id": 3064935590,
+      "hex": "0xb6af34a6",
+      "en": "None"
+    },
+    {
+      "id": 3184460045,
+      "hex": "0xbdcf010d",
+      "en": "EXPERIMENTAL BOOSTER",
+      "ja": "試作ブースター"
+    },
+    {
+      "id": 3195716396,
+      "hex": "0xbe7ac32c",
+      "en": "Improved guidance programming and propulsion boosters makes them hit with even more consistency."
+    },
+    {
+      "id": 3352344726,
+      "hex": "0xc7d0b896",
+      "en": "NONE"
+    },
+    {
+      "id": 3368068355,
+      "hex": "0xc8c0a503",
+      "en": "BOOSTERS",
+      "ja": "ブースター"
+    },
+    {
+      "id": 3426737172,
+      "hex": "0xcc3fdc14",
+      "en": "None",
+      "ja": "なし"
+    },
+    {
+      "id": 3476063430,
+      "hex": "0xcf3084c6",
+      "en": "Booster",
+      "ja": "ブースター"
+    },
+    {
+      "id": 3555193024,
+      "hex": "0xd3e7f0c0",
+      "en": "Helldivers will receive \u003ci=1\u003eadditional booster packs\u003c/i\u003e."
+    },
+    {
+      "id": 3781050566,
+      "hex": "0xe15e40c6",
+      "en": "Booster Pack"
+    },
+    {
+      "id": 3935054939,
+      "hex": "0xea8c2c5b",
+      "en": "BOOSTER"
+    },
+    {
+      "id": 3944088470,
+      "hex": "0xeb160396",
+      "en": "Flexible Reinforcement Budget",
+      "ja": "増援予算を柔軟に設定する"
+    },
+    {
+      "id": 3950858142,
+      "hex": "0xeb7d4f9e",
+      "en": "BOOSTER ADDED TO INVENTORY"
+    },
+    {
+      "id": 4000977582,
+      "hex": "0xee7a12ae",
+      "en": "Increased Reinforcement Budget",
+      "ja": "増援予算を増やす"
+    },
+    {
+      "id": 4064944355,
+      "hex": "0xf24a20e3",
+      "en": "NO BOOSTER",
+      "ja": "ブースターなし"
+    },
+    {
+      "id": 4104808838,
+      "hex": "0xf4aa6986",
+      "en": "Booster"
+    },
+    {
+      "id": 4154432606,
+      "hex": "0xf79f9c5e",
+      "en": "Localization Confusion",
+      "ja": "位置情報障害"
+    },
+    {
+      "id": 4161594482,
+      "hex": "0xf80ce472",
+      "en": "Hellpod Space Optimization",
+      "ja": "ヘルポッド内収納の最適化"
+    },
+    {
+      "id": 4220880742,
+      "hex": "0xfb958766",
+      "en": "BOOSTER",
+      "ja": "ブースター"
+    }
+  ],
+  "string_counts": {
+    "en": 24735,
+    "ja": 24369,
+    "zh": 0
+  }
+}
