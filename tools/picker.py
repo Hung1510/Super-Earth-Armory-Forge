@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.0"
+VERSION = "7.1"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.

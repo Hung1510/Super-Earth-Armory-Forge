@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.1 (2026-10-08)
+Full edition only (the Passive Swap edition is unchanged):
+- **Stratagem quick-swap key:** on the Hellpod loadout screen, press **F10** and your four stratagems become the next saved preset, with the panel closed. **Shift + F10** goes back. It carries on from the preset on screen (or the last one it put on), wraps around, and a small card shows which preset it is and its four stratagems. It does nothing while you are ready or off the loadout screen, and says so. The first press finds the game's code if the Stratagems tab was never opened, then finishes the swap. Pick another key (or turn it off) on the Stratagems tab; it is kept in `ArmoryForge\stratagem-key.txt`, so `loadout.ini` is unchanged. F10 is skipped if it is your panel or swap key.
+- **Stratagems tab, more control:** **Move up / Move down** set the order the key walks through. **Duplicate** copies a preset. **In the quick-swap key: leave out** keeps a preset for the tab but skips it on the key (it is saved as `| skip`). **Undo last apply** puts back what was on the screen before, after either the key or the Apply button. The list marks the preset that is on screen as ACTIVE and the left-out ones as SKIPPED.
+
 ## 7.0 (2026-10-08)
 Both editions (full and Passive Swap):
 - **Faster start:** the search for the game's passive table now reads memory four bytes at a time instead of one, about 2.5x faster in a benchmark, so the mod finishes its first search sooner and takes less of each frame while it runs. If a game build ever stores the table off that grid, the mod notices it found nothing and searches byte by byte, as before.

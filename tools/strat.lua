@@ -333,6 +333,22 @@ function S.pretty(nm)
     return nm
 end
 
+-- the name without the category in front, for the little toast: "ORBITAL. WALKING BARRAGE" -> "WALKING BARRAGE"
+function S.short(nm)
+    local t = S.pretty(nm)
+    return (t:gsub('^[^.]*%.%s*', ''))
+end
+
+-- two loadouts ({ name or false, ... } x4) hold the same stratagems in the same slots
+function S.same(a, b)
+    if not a or not b then return false end
+    for k = 1, SLOTS do
+        local x, y = a[k], b[k]
+        if (x and x:lower() or false) ~= (y and y:lower() or false) then return false end
+    end
+    return true
+end
+
 -- item id (info +4) -> true for the stratagems the loadout list offers (owned / available)
 local function offered()
     local set = {}

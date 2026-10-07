@@ -731,7 +731,7 @@ function PP.load_strat()
             if #parts >= 2 and parts[1] ~= '' then
                 local slots = {}
                 for k = 1, 4 do slots[k] = (parts[k + 1] and parts[k + 1] ~= '' and parts[k + 1] ~= '-') and parts[k + 1] or false end
-                PP.strat_user[#PP.strat_user + 1] = { name = parts[1], slots = slots }
+                PP.strat_user[#PP.strat_user + 1] = { name = parts[1], slots = slots, skip = (parts[6] or ''):lower() == 'skip' or nil }
             end
         end
     end
@@ -740,14 +740,145 @@ end
 function PP.save_strat()
     local path = forge_file('my-stratagems.txt')
     if not path then return false end
-    local L = { '; Super Earth Armory Forge: your stratagem presets, saved by the in-game panel. Name | Stratagem x4 (- = empty)' }
+    local L = { '; Super Earth Armory Forge: your stratagem presets, saved by the in-game panel. Name | Stratagem x4 (- = empty) [| skip = left out of the quick-swap key]' }
     for _, r in ipairs(PP.strat_user or {}) do
         local cells = {}
         for k = 1, 4 do cells[k] = r.slots[k] or '-' end
-        L[#L + 1] = r.name .. ' | ' .. table.concat(cells, ' | ')
+        L[#L + 1] = r.name .. ' | ' .. table.concat(cells, ' | ') .. (r.skip and ' | skip' or '')
     end
     L[#L + 1] = ''
     return write_file(path, table.concat(L, '\r\n'))
+end
+
+-- The quick-swap key for stratagem presets (default F10, Shift+key goes back). It is kept apart from
+-- loadout.ini, in ArmoryForge\stratagem-key.txt ("key = F10"), so the loadout format stays as it is.
+function PP.strat_key()
+    if PP.strat_key_value == nil then
+        PP.strat_key_value = 'F10'
+        local text = read_saved('stratagem-key.txt')
+        local k = text and text:match('key%s*=%s*(%w+)')
+        if k then
+            k = k:upper()
+            if k == 'OFF' or PP.fkey(k) then PP.strat_key_value = k end
+        end
+    end
+    local k = PP.strat_key_value
+    if k == 'OFF' or k == hotkey() or k == swap_key() then return 'OFF' end    -- the other two keys win
+    return k
+end
+
+function PP.set_strat_key(k)
+    if k ~= 'OFF' and (not PP.fkey(k) or k == hotkey() or k == swap_key()) then return end
+    PP.strat_key_value = k
+    local path = forge_file('stratagem-key.txt')
+    if path then write_file(path, '; Super Earth Armory Forge: the key that cycles your stratagem presets (F1..F12 or off)\r\nkey = ' .. k:lower() .. '\r\n') end
+    say(k == 'OFF' and 'Stratagem quick-swap key turned off' or ('Stratagem presets now cycle with ' .. k .. '  (Shift ' .. k .. ' goes back)'), 4)
+end
+
+-- the next key in F1..F12 that is free, going up (1) or down (-1)
+function PP.strat_key_step(dir)
+    local cur = PP.strat_key()
+    local n = cur == 'OFF' and (dir > 0 and 0 or 13) or tonumber(cur:match('%d+'))
+    for _ = 1, 12 do
+        n = (n - 1 + dir) % 12 + 1
+        local k = 'F' .. n
+        if k ~= hotkey() and k ~= swap_key() then return k end
+    end
+    return cur
+end
+
+-- presets that the key walks through (the ones not marked skip)
+function PP.strat_cycle_list()
+    if not PP.strat_user then PP.load_strat() end
+    local out = {}
+    for _, e in ipairs(PP.strat_user) do if not e.skip then out[#out + 1] = e end end
+    return out
+end
+
+function PP.strat_toast(title, sub, line, secs)
+    toast.text, toast.sub, toast.line, toast.line_for = title, sub, line, title
+    toast.till = now_s() + (secs or 3)
+    if toast.gui then pcall(sr.World.destroy_gui, toast.world, toast.gui) end
+    toast.gui, toast.world = nil, nil
+    if ui.open then say(title .. (line and ('  -  ' .. line) or ''), secs or 3) end
+end
+
+function PP.strat_names(slots)
+    local t = {}
+    for k = 1, 4 do if slots[k] then t[#t + 1] = STRAT.short(slots[k]) end end
+    return #t > 0 and table.concat(t, '  /  ') or 'No stratagems'
+end
+
+-- Apply one preset and say so. `why` strings are shown as they are. Remembers what was there for Undo.
+function PP.strat_put(entry, pos, total)
+    local before = select(1, STRAT.read_loadout())
+    local ok, done, why, skipped = pcall(STRAT.apply, entry.slots)
+    if not ok then why = tostring(done); done = false end
+    if not done then
+        PP.strat_toast('Stratagems not changed', 'stratagem presets', tostring(why), 4)
+        return false, why
+    end
+    if before and not STRAT.same(before, entry.slots) then ui.strat_undo = { slots = before, name = entry.name } end
+    ui.strat_last = entry
+    ui.strat_at = 0
+    local line = PP.strat_names(entry.slots)
+    if skipped and #skipped > 0 then line = 'Skipped: ' .. table.concat(skipped, ', ') end
+    PP.strat_toast(entry.name, 'stratagems ' .. (pos and (pos .. ' of ' .. total) or 'applied'), line, 3.2)
+    return true, nil, skipped
+end
+
+-- the quick-swap key: dir = 1 next, -1 previous. Starts the search for the game's code if the tab was
+-- never opened, and finishes the swap as soon as it is found.
+function PP.strat_cycle(dir)
+    local list = PP.strat_cycle_list()
+    if #list == 0 then
+        PP.strat_toast('No stratagem presets yet', 'stratagem presets', 'Stratagems tab: + Save current loadout', 4)
+        return
+    end
+    if STRAT.state == 'idle' then pcall(STRAT.request) end
+    if STRAT.state == 'off' then
+        PP.strat_toast('Stratagem presets are off', 'stratagem presets', tostring(STRAT.why or 'game code not found'), 5)
+        return
+    end
+    if not STRAT.ready() then
+        PP.strat_pending = { dir = dir, till = now_s() + 10 }
+        PP.strat_toast('Finding the game\'s loadout code...', 'stratagem presets', nil, 3)
+        return
+    end
+    local now_slots, why = STRAT.read_loadout()
+    if not now_slots then
+        PP.strat_toast('Open the Hellpod loadout screen', 'stratagem presets', tostring(why or ''), 4)
+        return
+    end
+    -- where we are: the preset the screen shows now, else the one applied last, else before the first
+    local at
+    for i, e in ipairs(list) do if STRAT.same(now_slots, e.slots) then at = i; break end end
+    if not at and ui.strat_last then
+        for i, e in ipairs(list) do if e == ui.strat_last then at = i; break end end
+    end
+    local n = #list
+    local to
+    if not at then to = dir > 0 and 1 or n else to = (at - 1 + dir) % n + 1 end
+    PP.strat_put(list[to], to, n)
+    ui.strat_sig = nil
+end
+
+-- each frame, panel open or not: finish a swap that was waiting for the search to end
+function PP.strat_background(now)
+    local pend = PP.strat_pending
+    if not pend then return end
+    if STRAT.searching() then
+        if not (ui.open and ui.settings == 'strat') then pcall(STRAT.tick) end
+    end
+    if STRAT.ready() then
+        PP.strat_pending = nil
+        PP.strat_cycle(pend.dir)
+    elseif STRAT.state == 'off' then
+        PP.strat_pending = nil
+        PP.strat_toast('Stratagem presets are off', 'stratagem presets', tostring(STRAT.why or 'game code not found'), 5)
+    elseif now > pend.till then
+        PP.strat_pending = nil
+    end
 end
 
 -- each frame while the Stratagems tab is shown: the search for the game's code, and the slots on screen
@@ -1742,10 +1873,15 @@ local function draw(width, height)
         text(up(title), x, y + 16, 21, C.TEXT, limit)
     end
     local bar = { w = 0 }            -- width the scroll bar takes from the list's rows
-    local function list_row(key, y, name, chosen, name_c)
+    local function list_row(key, y, name, chosen, name_c, tag, tag_c)
         if chosen then rect(LX + 1, y, LW - 2 - bar.w, RH - 1, C.ROW_HI, 951); rect(LX + 1, y, 3, RH - 1, C.YELLOW, 952)
         elseif ui.hover == key then rect(LX + 1, y, LW - 2 - bar.w, RH - 1, C.ROW, 951) end
-        text(name, IX + 4, y + 5, 14, name_c or (chosen and C.TEXT or C.MUTED), IW - 12 - bar.w)
+        local tw = 0
+        if tag then
+            tw = measure(up(tag), 11) + 10
+            text(tag, IX + IW - 8 - bar.w, y + 7, 11, tag_c or C.DIM, nil, 'right')
+        end
+        text(name, IX + 4, y + 5, 14, name_c or (chosen and C.TEXT or C.MUTED), IW - 12 - bar.w - tw)
         region(key, LX + 1, y, LW - 2 - bar.w, RH - 1)
     end
     -- A list longer than its box (y0..y1) scrolls: mouse wheel over the left column,
@@ -1937,7 +2073,11 @@ local function draw(width, height)
             local key, chosen = 'sp:' .. k, ui.ssel == k
             if ui.naming and ui.naming.strat and ui.naming.i == k then
                 list_row(key, y, ui.naming.text .. '_', chosen, ui.naming.fresh and C.MUTED or C.YELLOW)
-            else list_row(key, y, list[k].name, chosen) end
+            else
+                local on = ui.strat_now and STRAT.same(ui.strat_now, list[k].slots)
+                list_row(key, y, list[k].name, chosen, nil, on and 'ACTIVE' or list[k].skip and 'SKIPPED' or nil,
+                         on and C.YELLOW or C.DIM)
+            end
             y = y + RH
         end
         bar.w = 0
@@ -1966,18 +2106,37 @@ local function draw(width, height)
             y2 = wrap(why or 'Open the Hellpod loadout screen (before a mission).', RX, y2, 13,
                       STRAT.state == 'off' and C.BAD or C.YELLOW, RIW, 3) + 8
         end
-        y2 = y2 + 8
+        y2 = y2 + 4
+        -- the quick-swap key
+        rect(RX, y2, RIW, 1, C.LINE, 951)
+        label('Quick-swap key', RX, y2 + 10, nil, RIW)
+        local kcur = PP.strat_key()
+        local kx = RX
+        kx = kx + button('skey:prev', '<', kx, y2 + 32, 36, 30, true) + 6
+        kx = kx + button('skey:cur', kcur, kx, y2 + 32, 70, 30, true, kcur ~= 'OFF') + 6
+        kx = kx + button('skey:next', '>', kx, y2 + 32, 36, 30, true) + 8
+        button('skey:off', 'Turn off', kx, y2 + 32, nil, 30, kcur ~= 'OFF')
+        y2 = wrap(kcur == 'OFF' and 'Off. Pick a key with < >.'
+                  or ('On the loadout screen, ' .. kcur .. ' puts on the next preset, Shift ' .. kcur .. ' the one before. Works with the panel closed.'),
+                  RX, y2 + 68, 12, C.DIM, RIW, 2) + 6
         if entry then
             rect(RX, y2, RIW, 1, C.LINE, 951)
             label('Preset: ' .. entry.name, RX, y2 + 10, nil, RIW)
             y2 = slot_rows(y2 + 32, entry.slots, C.YELLOW)
             local by = math.max(y2 + 8, BOT - 96)
-            local bx = RX
             local sure = ui.confirm and ui.confirm.kind
-            bx = bx + button('sapply', 'Apply to loadout', bx, by, nil, 34, ui.strat_now ~= nil, true) + 8
-            bx = bx + button('sover', sure == 'sover' and 'Click again' or 'Save current here', bx, by, nil, 34, ui.strat_now ~= nil) + 8
-            bx = bx + button('sren', 'Rename', bx, by, nil, 34, true) + 8
-            button('sdel', sure == 'sdel' and 'Click again' or 'Delete', bx, by, nil, 34, true, false, sure == 'sdel' and C.BAD or nil)
+            local bx = RX
+            bx = bx + button('smoveup', 'Move up', bx, by - 84, nil, 34, ui.ssel > 1) + 8
+            bx = bx + button('smovedown', 'Move down', bx, by - 84, nil, 34, ui.ssel < #list) + 8
+            bx = bx + button('sdup', 'Duplicate', bx, by - 84, nil, 34, true) + 8
+            button('sundo', 'Undo last apply', bx, by - 84, nil, 34, ui.strat_undo ~= nil)
+            bx = RX
+            bx = bx + button('sapply', 'Apply to loadout', bx, by - 42, nil, 34, ui.strat_now ~= nil, true) + 8
+            bx = bx + button('sover', sure == 'sover' and 'Click again' or 'Save current here', bx, by - 42, nil, 34, ui.strat_now ~= nil) + 8
+            bx = bx + button('sren', 'Rename', bx, by - 42, nil, 34, true) + 8
+            button('sdel', sure == 'sdel' and 'Click again' or 'Delete', bx, by - 42, nil, 34, true, false, sure == 'sdel' and C.BAD or nil)
+            button('sskip', entry.skip and 'Left out of the quick-swap key: put back' or 'In the quick-swap key: leave out',
+                   RX, by, nil, 34, true)
             if ui.naming and ui.naming.strat then text('Type a name, Enter to keep it, Esc to cancel.', RX, by + 46, 13, C.YELLOW, RIW)
             else text('Only stratagems you have unlocked are put in. Not while you are ready.', RX, by + 46, 12, C.DIM, RIW) end
         else
@@ -2021,16 +2180,19 @@ local function draw(width, height)
             label(title, RX, ry, nil, RIW)
             ry = ry + 22
             for _, r in ipairs(list) do
+              if r then
                 local kw = 0
                 for k in r[1]:gmatch('[^|]+') do kw = kw + keycap(k, RX + kw, ry) + 4 end
                 text(r[2], RX + math.max(kw, 150) + 8, ry + 4, 13, C.TEXT, RIW - math.max(kw, 150) - 8)
                 ry = ry + 28
+              end
             end
             ry = ry + 8
         end
         rows('Keyboard', {
             { hotkey(), 'Open / close the panel' },
             swap_key() ~= 'OFF' and { swap_key(), 'Swap to the next preset (panel closed)' } or { 'KEYS TAB', 'Quick-swap key: off' },
+            (not MOD.swap_only and PP.strat_key() ~= 'OFF') and { PP.strat_key() .. '|SHIFT ' .. PP.strat_key(), 'Next / previous stratagem preset (loadout screen)' } or false,
             { 'CTRL+Z', 'Undo' }, { 'CTRL+F', 'Search passives and effects' },
             { 'PGUP|PGDN', 'Scroll a long list' }, { 'ENTER|ESC', 'Set / cancel a typed value' },
             { 'CTRL +|CTRL -', 'Panel size (CTRL 0 resets size and position)' },
@@ -2759,13 +2921,56 @@ local function click(key)
         ui.naming = { i = #PP.strat_user, text = base .. ' ' .. k, fresh = true, strat = true }
         say('Saved. Type a name for it, or press Enter to keep "' .. base .. ' ' .. k .. '".', 5)
     elseif kind == 'sapply' and ui.ssel and PP.strat_user[ui.ssel] then
+        local before = select(1, STRAT.read_loadout())
         local ok, done, why, skipped = pcall(STRAT.apply, PP.strat_user[ui.ssel].slots)
         if not ok then why = tostring(done); done = false end
         if done then
             local e = PP.strat_user[ui.ssel]
+            if before and not STRAT.same(before, e.slots) then ui.strat_undo = { slots = before, name = e.name } end
+            ui.strat_last = e
             if skipped and #skipped > 0 then say('Applied "' .. e.name .. '". Skipped: ' .. table.concat(skipped, ', '), 6)
             else say('Applied "' .. e.name .. '"') end
             ui.strat_at = 0
+        else say(tostring(why), 6) end
+    elseif kind == 'skey' and not MOD.swap_only then
+        if arg == 'off' then PP.set_strat_key('OFF')
+        elseif arg == 'next' then PP.set_strat_key(PP.strat_key_step(1))
+        elseif arg == 'prev' then PP.set_strat_key(PP.strat_key_step(-1)) end
+    elseif kind == 'smoveup' and ui.ssel and ui.ssel > 1 and PP.strat_user[ui.ssel] then
+        local l = PP.strat_user
+        l[ui.ssel], l[ui.ssel - 1] = l[ui.ssel - 1], l[ui.ssel]
+        ui.ssel = ui.ssel - 1
+        PP.save_strat()
+    elseif kind == 'smovedown' and ui.ssel and PP.strat_user[ui.ssel] and PP.strat_user[ui.ssel + 1] then
+        local l = PP.strat_user
+        l[ui.ssel], l[ui.ssel + 1] = l[ui.ssel + 1], l[ui.ssel]
+        ui.ssel = ui.ssel + 1
+        PP.save_strat()
+    elseif kind == 'sdup' and ui.ssel and PP.strat_user[ui.ssel] then
+        local e = PP.strat_user[ui.ssel]
+        local taken = {}
+        for _, u in ipairs(PP.strat_user) do taken[u.name] = true end
+        local base, k = e.name:sub(1, 22) .. ' copy', 1
+        local name = base
+        while taken[name] do k = k + 1; name = base .. ' ' .. k end
+        local slots = {}
+        for i = 1, 4 do slots[i] = e.slots[i] end
+        table.insert(PP.strat_user, ui.ssel + 1, { name = name, slots = slots, skip = e.skip })
+        ui.ssel = ui.ssel + 1
+        PP.save_strat()
+        say('Duplicated as "' .. name .. '"')
+    elseif kind == 'sskip' and ui.ssel and PP.strat_user[ui.ssel] then
+        local e = PP.strat_user[ui.ssel]
+        e.skip = (not e.skip) or nil
+        PP.save_strat()
+        say(e.skip and ('"' .. e.name .. '" is left out of the quick-swap key') or ('"' .. e.name .. '" is back in the quick-swap key'))
+    elseif kind == 'sundo' and ui.strat_undo then
+        local u = ui.strat_undo
+        local ok, done, why = pcall(STRAT.apply, u.slots)
+        if not ok then why = tostring(done); done = false end
+        if done then
+            ui.strat_undo, ui.strat_last, ui.strat_at = nil, nil, 0
+            say('Put back the stratagems from before "' .. u.name .. '"')
         else say(tostring(why), 6) end
     elseif kind == 'sover' and ui.ssel and PP.strat_user[ui.ssel] then
         if not ui.strat_now then say(ui.strat_why or 'Open the Hellpod loadout screen first'); return end
@@ -3599,7 +3804,8 @@ local function toast_frame(now)
     local width, height = sr.Gui.resolution()
     local s = height / 1080 * ui_scale()
     local function px(v) return math.floor(v + 0.5) end
-    local w, h = px(480 * s), px(72 * s)
+    local hu = (toast.line and toast.line_for == toast.text) and 96 or 72           -- card height in panel units
+    local w, h = px(480 * s), px(hu * s)
     local x, y = px((width - w) / 2), px(height - 140 * s - h)
     local yellow = Color(255, 255, 231, 16)
     local function r(tx, py, pw, ph, c, z)      -- panel units from the card's top left
@@ -3607,9 +3813,9 @@ local function toast_frame(now)
         local y0, y1 = px(y + h - (py + ph) * s), px(y + h - py * s)
         Gui.rect(gui, Vector3(x0, y0, z or 961), Vector2(math.max(1, x1 - x0), math.max(1, y1 - y0)), c)
     end
-    r(0, 0, 480, 72, Color(246, 11, 12, 13), 960)
-    r(0, 0, 4, 72, yellow)
-    r(4, 0, 476, 1, Color(255, 62, 65, 70)); r(4, 71, 476, 1, Color(255, 62, 65, 70)); r(479, 0, 1, 72, Color(255, 62, 65, 70))
+    r(0, 0, 480, hu, Color(246, 11, 12, 13), 960)
+    r(0, 0, 4, hu, yellow)
+    r(4, 0, 476, 1, Color(255, 62, 65, 70)); r(4, hu - 1, 476, 1, Color(255, 62, 65, 70)); r(479, 0, 1, hu, Color(255, 62, 65, 70))
     if f.font then
         local function t(value, tx, py, size, c)
             value = PP.tr(value)
@@ -3618,6 +3824,7 @@ local function toast_frame(now)
         end
         t('ARMORY FORGE  -  ' .. string.upper(tostring(toast.sub or '')), 20, 13, 11, yellow)
         t(tostring(toast.text), 20, 34, 22, Color(255, 233, 230, 220))
+        if hu > 72 then t(tostring(toast.line), 20, 68, 12, Color(255, 168, 172, 178)) end
     end
 end
 
@@ -3718,6 +3925,17 @@ panel_tick = function(now)
         ui.hinted = true
         if LOADOUT and #LOADOUT.profiles == 0 and not ui.open then
             toast.text, toast.sub, toast.till = 'Press ' .. hotkey() .. ' to forge your armor', 'ready', now + 6
+        end
+    end
+    if not MOD.swap_only and state.phase == 'ready' then
+        pcall(PP.strat_background, now)
+        local tk = PP.strat_key()
+        if tk ~= 'OFF' and hotkey_pressed(tk) and not ui.value and not ui.naming and now >= (ui.strat_key_at or 0) then
+            ui.strat_key_at = now + 0.35
+            local back = input.key_down(VK.Shift)
+            if not ui.last_text and LOADOUT then ui.last_text = snapshot() end
+            local ok, why = pcall(PP.strat_cycle, back and -1 or 1)
+            if not ok then log('stratagem quick-swap: ' .. tostring(why)) end
         end
     end
     local sk = swap_key()

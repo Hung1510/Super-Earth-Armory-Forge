@@ -357,6 +357,137 @@ s.g.key(F7)
 s.g.tick(120)
 check("strat" not in s.g.regions(), "Passive Swap edition: no Stratagems tab")
 
+
+# ------------------------------------------------------------------ 5. the quick-swap key
+F10, F11, SHIFT = 0x79, 0x7A, 0x10
+PRESETS = """; test
+A | Eagle_Strafing_Run | Orbital_Railcannon_Strike | - | Autocannon_Sentry
+B | Shield_Generator_Pack | - | - | -
+C | Autocannon_Sentry | Eagle_Strafing_Run | - | -
+D | Eagle_Strafing_Run | - | - | - | skip
+"""
+
+
+def with_presets(image=None, text=PRESETS, **kw):
+    q = World(image or fake_dll(), **kw)
+    os.makedirs(q.fdir, exist_ok=True)
+    open(os.path.join(q.fdir, "my-stratagems.txt"), "w", encoding="utf-8").write(text)
+    q.g.tick(420)
+    return q
+
+
+def press(q, vk, shift=False):
+    keys = q.g.L.globals()[b"KEYS"]
+    if shift:
+        keys[SHIFT] = True
+    q.g.key(vk)
+    keys[SHIFT] = None
+    q.g.tick(30)
+
+
+q = with_presets()
+g = q.g
+check(not q.calls, "quick-swap: nothing runs before the key is pressed")
+press(q, F10)
+check(q.slots() == [9, 0, 0, 0], "F10 with the panel closed puts on the next preset (A is on, so B) (%s)" % q.slots())
+check("SHIELD GENERATOR PACK" in q.texts().upper() and "B" in q.texts(), "and a toast says which one")
+press(q, F10)
+check(q.slots() == [7, 3, 0, 0], "F10 again: C (%s)" % q.slots())
+press(q, F10)
+check(q.slots() == [3, 5, 0, 7], "F10 again wraps to A, and D (marked skip) is left out (%s)" % q.slots())
+press(q, F10, shift=True)
+check(q.slots() == [7, 3, 0, 0], "Shift F10 goes back (%s)" % q.slots())
+q.set_slots([5, 5, 5, 0])
+g.tick(10)
+press(q, F10)
+check(q.slots() == [7, 3, 0, 0] or q.slots() == [3, 5, 0, 7] or q.slots() == [9, 0, 0, 0],
+      "from a loadout that is no preset it carries on after the last one it put on (%s)" % q.slots())
+last = q.slots()
+
+# undo from the tab
+q.set_slots([5, 5, 5, 0])
+g.tick(10)
+press(q, F10)
+g.key(F7)
+g.tick(150)
+g.click("strat")
+g.tick(40)
+g.click("sp:1")
+check("sundo" in g.regions(), "the tab has Undo last apply")
+check(not layout_problems(g), "quick-swap section and extra buttons fit (%s)" % layout_problems(g)[:3])
+g.click("sundo")
+check(q.slots() == [5, 5, 5, 0] or q.slots()[:3] == [5, 5, 5], "Undo last apply puts back what was there before (%s)" % q.slots())
+
+# reorder, duplicate, skip, from the tab
+g.click("sp:2")
+g.click("smoveup")
+lines = q.file().splitlines()
+check(lines[1].startswith("B |") and lines[2].startswith("A |"), "Move up changes the order in the file (%r)" % lines[1:3])
+g.click("smovedown")
+check(q.file().splitlines()[2].startswith("B |"), "Move down puts it back")
+g.click("sdup")
+check(q.file().count("B copy |") == 1, "Duplicate adds a copy right below")
+g.click("sskip")
+check("B copy | Shield_Generator_Pack | - | - | - | skip" in q.file(), "In the quick-swap key: leave out writes | skip (%r)" % q.file())
+g.click("sp:4")
+g.click("sskip")
+check(q.file().count("| skip") == 1 or q.file().count("skip") >= 1, "and it can be put back")
+check(not layout_problems(g), "the tab with a skipped preset fits (%s)" % layout_problems(g)[:3])
+
+# the key itself
+kf = os.path.join(q.fdir, "stratagem-key.txt")
+g.click("skey:next")
+check(os.path.exists(kf) and "key = f11" in open(kf).read().lower(), "the key can be changed on the tab and is saved apart from loadout.ini")
+g.key(F7)
+g.tick(150)
+q.set_slots([5, 5, 5, 0])
+g.tick(10)
+n = len(q.calls)
+press(q, F10)
+check(len(q.calls) == n, "the old key no longer does anything")
+press(q, F11)
+check(len(q.calls) > n, "the new key does")
+g.key(F7)
+g.tick(150)
+if "skey:off" not in g.regions():
+    g.click("strat")
+    g.tick(40)
+g.click("skey:off")
+n = len(q.calls)
+press(q, F11)
+check(len(q.calls) == n and "off" in open(kf).read().lower(), "Turn off: the key does nothing and the choice is kept")
+
+# F7 (panel) and F9 (swap) are never picked
+g.click("skey:next")
+check("f9" not in open(kf).read().lower().split("key =")[-1] and "f7" not in open(kf).read().lower().split("key =")[-1],
+      "the panel key and the swap key are skipped when stepping")
+
+# refusals: no loadout screen, ready, nothing saved
+q2 = with_presets()
+q2.write_u32(STACK_OBJ, 4)
+press(q2, F10)
+check(not [c for c in q2.calls if c[0] == V["set_widget"]] and "open the hellpod loadout screen" in q2.texts().lower(),
+      "off the loadout screen the key says so and changes nothing")
+q3 = with_presets(text="; none\n")
+press(q3, F10)
+check(not q3.calls and "no stratagem presets" in q3.texts().lower(), "no presets saved: it says so")
+q4 = with_presets()
+q4.write_u32(SCREEN + V["panels"] + V["ready_timer"], 0x3FC00000)
+before = q4.slots()
+press(q4, F10)
+check(q4.slots() == before and "ready" in q4.texts().lower(), "while ready it changes nothing and says why")
+
+# moved code: the key starts the search, and finishes the swap when it is found
+q5 = with_presets(fake_dll(moved={"set_slot": 0x1600000, "open_list": 0x1610000}))
+q5.g.key(F10)
+q5.g.tick(120)
+check(q5.slots() == [9, 0, 0, 0], "code moved: the key starts the search and puts the preset on when it is found (%s)" % q5.slots())
+
+# the Passive Swap edition does not have it
+q6 = with_presets(edition_swap=True)
+press(q6, F10)
+check(not q6.calls, "Passive Swap edition: the key does nothing")
+
 if failed:
     print("\n%d FAILED" % len(failed))
     sys.exit(1)

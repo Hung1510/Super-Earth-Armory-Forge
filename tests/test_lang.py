@@ -112,7 +112,7 @@ t = joined(gp)
 check("军械" in t and "，" not in t and "。" not in t, "punctuation the font lacks gets an ASCII stand-in, the rest is Chinese")
 
 # ------------------------------------------------------------------ 4. coverage
-ALLOWED = re.compile(r"(?i)(F\d+|CTRL.*|PGUP.*|PGDN|ENTER|ESC|BACK|START|D-PAD|LB|RB|R-STICK|CLICK|WHEEL|DRAG|V[\d.]+|"
+ALLOWED = re.compile(r"(?i)(F\d+|SHIFT.*|CTRL.*|PGUP.*|PGDN|ENTER|ESC|BACK|START|D-PAD|LB|RB|R-STICK|CLICK|WHEEL|DRAG|V[\d.]+|"
                      r"KEYS TAB|ENGLISH|English|LANGUAGE  /  语言|.*CTRL.*|.*loadout\.ini.*|.*SHODAN.*|.*bug.*|.*Esc.*)")
 
 

@@ -148,7 +148,7 @@ long_ = [(k, v) for k, v in ja["ui"].items() if len(v) > 2.2 * len(k) + 12]
 check(not long_, "no translation far longer than its English (layout)%s" % (": " + repr(long_[:2]) if long_ else ""))
 
 # ------------------------------------------------------------------ 5. coverage
-ALLOWED = re.compile(r"(?i)(F\d+|CTRL.*|PGUP.*|PGDN|ENTER|ESC|BACK|START|D-PAD|LB|RB|R-STICK|CLICK|WHEEL|DRAG|V[\d.]+|"
+ALLOWED = re.compile(r"(?i)(F\d+|SHIFT.*|CTRL.*|PGUP.*|PGDN|ENTER|ESC|BACK|START|D-PAD|LB|RB|R-STICK|CLICK|WHEEL|DRAG|V[\d.]+|"
                      r"KEYS TAB|ENGLISH|English|LANGUAGE  /  语言|.*CTRL.*|.*loadout\.ini.*|.*SHODAN.*|.*bug.*|.*Esc.*)")
 
 
