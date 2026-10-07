@@ -1303,6 +1303,8 @@ function KITS.wear_tick(now)
         if KITS.found > 0 and now >= (W.retry_at or 0) then
             if W.full == 0 then
                 KITS.find_start(now)                         -- the first pass: right after startup
+            elseif LOADOUT and LOADOUT.booster and not MOD.swap_only and W.full < 12 then
+                KITS.find_start(now)                         -- booster = ...: keep looking (every minute) until the loadout is found
             elseif W.full < WEAR_FULL_MAX and panel_open() then
                 KITS.find_start(now)                         -- later passes: only for a panel that needs it
             end
