@@ -39,6 +39,7 @@ SUITES = [
     ("test_hot_reload.py", "loadout.ini edited while the game runs is reloaded, undoable"),
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
+    ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),
     ("test_swap_edition.py", "Passive Swap edition (Nexus build)"),
     ("test_release.py", "release zips, blank install, old saves"),

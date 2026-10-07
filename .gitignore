@@ -4,3 +4,5 @@ __pycache__/
 *.patch_0*
 build/
 dist/
+
+tools/booster-names/dist/

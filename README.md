@@ -209,6 +209,8 @@ tests/test_web_i18n.js     the web builder in Chinese and Japanese
 tests/test_weight.py       armor weight: loadout line, panel, undo, save, share codes, Passive Swap untouched
 tools/armor-names/         builds FileDiver's armor dumper for Windows (CI: armor-names-tool.yml) with a double-click runner
 tools/armor_names.py       FileDiver's armor list -> tools/armor-names.json (ids to names), checked against the game's kits
+tools/booster-names/        a booster dumper added to FileDiver for Windows (CI: booster-names-tool.yml): the booster enum, texts and files, read from a game install
+tests/test_booster_tool.py     the booster names tool: build script, runner, dumper source, workflow
 tests/test_armor_names.py  the name table conversion and game check
 tools/passives.json        plain description + armors per passive (wiki data; corrections welcome)
 tests/run_all.py           runs every suite and prints one summary
