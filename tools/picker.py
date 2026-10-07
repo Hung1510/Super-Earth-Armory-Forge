@@ -1126,6 +1126,8 @@ What it does:
 - F10 (wait ~30 s after start): finds where your equipped armor is stored.
   Press F10, change armor in the armory (EQUIP), press F10 again.
   Results: ...\\ArmoryForge\\loadout-research.txt
+  Boosters: equip a booster (say Vitality), press F10, equip a different one (say Stamina)
+  WITHOUT changing armor, press F10 again, and once more with a third. Send the file.
 - F4 (wait ~30 s after start): booster scan. Looks through memory for the booster
   titles (Dead Sprint, Stun Pods, ...) and dumps what sits around them.
   The mod also checks its own tables for them while it starts up.

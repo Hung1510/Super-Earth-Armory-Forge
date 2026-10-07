@@ -134,6 +134,7 @@ struct.pack_into("<III", g3.mem[LOAD], 0x100, 0x1111, 0, 0)      # a loadout: ar
 struct.pack_into("<I", g3.mem[LOAD], 0x108, 0x2222)
 struct.pack_into("<I", g3.mem[LOAD], 0x110, 0x4444)
 struct.pack_into("<I", g3.mem[LOAD], 0x800, 0x1111)               # an armor id on its own: not a loadout
+struct.pack_into("<I", g3.mem[LOAD], 0x120, 1)                    # the equipped booster (1 = Vitality) sits next to it
 g3.tick(420)
 lpath = os.path.join(os.environ["LOCALAPPDATA"], "CowboyBingus", "Helldivers2", "ArmoryForge", "loadout-research.txt")
 g3.key(0x79)
@@ -144,11 +145,16 @@ check("at 0x30000100: armor 0x00001111 (Med-Kit) | helmet 0x00002222 (+8) | cape
 check("0x30000800" not in lt, "... and not an armor id on its own")
 check(not any("0x%X" % (GAME_BASE + 0x10000) in ln for ln in lt.splitlines()), "... nor the kit records themselves")
 struct.pack_into("<I", g3.mem[LOAD], 0x100, 0x3333)               # the player equips another armor
+struct.pack_into("<I", g3.mem[LOAD], 0x120, 2)                    # ... and Stamina instead of Vitality
 g3.key(0x79)
 g3.tick(300)
 lt = open(lpath, encoding="utf-8").read()
 check("CHANGED 0x30000100: armor 0x00001111 (Med-Kit) -> armor 0x00003333 (Inflammable)" in lt,
       "F10 again: the place that now holds the new armor is reported")
+
+check("place 0x30000100: " in lt and "+32: 1 -> 2   <- booster?" in lt,
+      "F10 again: the word that went from booster 1 to booster 2 next to the armor id is flagged")
+check("+0: 4369 -> 13107   <- booster?" not in lt, "... and the armor id changing is not mistaken for a booster")
 
 # ------------------------------------------------------------------ 6. F11: another armor's colours
 arm_pieces = [GAME_BASE + 0x10000 + 24 + 64 + 24 + i * 96 for i in range(3)]   # kit 0x1111, one body

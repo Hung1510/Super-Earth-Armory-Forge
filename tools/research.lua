@@ -272,11 +272,56 @@ local function ls_finish(now)
         L[#L + 1] = string.format('  at %s: %s | %s (%+d) | %s (%+d)', hex(c.at), describe(LS.ids[c.armor]),
             describe(LS.ids[c.helmet]), c.dh, describe(LS.ids[c.cape]), c.dc)
     end
+    -- boosters: the loadout sits next to the armor ids, so the equipped booster should too.
+    -- Keep the words around each place; next time, list the ones that changed. Equip another
+    -- booster between two scans and the word that went from one booster number to another
+    -- (0 none, 1 Vitality, 2 Stamina, 3 Muscle, 4 UAV, 5 Increased budget, 6 Flexible, ...) is it.
+    local WA = 1024
+    local function read_win(at)         -- 512 bytes before the id if the memory goes back that far
+        for _, wb in ipairs({ 512, 256, 128, 0 }) do
+            local b = api.read(at - wb, wb + WA)
+            if b then return b, wb end
+        end
+    end
+    local prev, snaps = LS.snaps or {}, {}
+    if LS.scans > 1 and next(prev) then
+        L[#L + 1] = '  words around the places of the last scan that changed (offset from the armor id: old -> new):'
+        local keys = {}
+        for at in pairs(prev) do keys[#keys + 1] = at end
+        table.sort(keys)
+        local shown = 0
+        for _, at in ipairs(keys) do
+            local cur, wb = read_win(at)
+            local old = prev[at] and prev[at].blob
+            if cur and old and #cur == #old and wb == prev[at].wb then
+                local likely, other = {}, {}
+                for o = 0, #cur - 4, 4 do
+                    local a, b = u32(old, o), u32(cur, o)
+                    if a ~= b then
+                        local row = string.format('    %+d: %d -> %d', o - wb, a, b)
+                        if a <= 21 and b <= 21 then likely[#likely + 1] = row .. '   <- booster?' else other[#other + 1] = row end
+                    end
+                end
+                if (#likely > 0 or #other > 0) and shown < 14 then
+                    shown = shown + 1
+                    L[#L + 1] = string.format('  place %s: %d word(s) changed, %d look like a booster number', hex(at), #likely + #other, #likely)
+                    for _, r in ipairs(likely) do L[#L + 1] = r end
+                    for i = 1, math.min(#other, 10) do L[#L + 1] = other[i] end
+                end
+            end
+        end
+    end
+    for i = 1, math.min(#LS.cands, 40) do
+        local at = LS.cands[i].at
+        local b, wb = read_win(at)
+        if b then snaps[at] = { blob = b, wb = wb } end
+    end
+    LS.snaps = snaps
     LS.history[#LS.history + 1] = table.concat(L, '\r\n')
     LS.last = LS.cands
     local path = forge_file('loadout-research.txt')
     write_file(path, '# Armory Forge research: where is the equipped armor stored?\r\n' ..
-        '# Press F10, change your armor (EQUIP), press F10 again, then send this file.\r\n\r\n' ..
+        '# Press F10, change your armor (EQUIP) or your booster, press F10 again, then send this file.\r\n\r\n' ..
         table.concat(LS.history, '\r\n\r\n') .. '\r\n')
     state.research_note = 'Loadout scan ' .. LS.scans .. ' done: ' .. LS.ncand .. ' place(s)' ..
         (LS.scans > 1 and (', ' .. #LS.moved .. ' changed') or '. Now change armor and press F10 again')
