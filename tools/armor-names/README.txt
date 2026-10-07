@@ -14,4 +14,8 @@ tools/armor-names/build.sh in the Super Earth Armory Forge repository with one c
 the language comes from ARMOR_NAMES_LANG instead of always English.
 FileDiver is BSD-3-Clause licensed (LICENSE-filediver.txt), by xypwn and contributors.
 
+Game not found (an empty armors.json, or "Unable to detect game install directory")?
+Drag your Helldivers 2 folder (the one holding "data") onto Run-me.bat, or put its path on
+one line in a file called game-dir.txt next to it, e.g. E:\SteamLibrary\steamapps\common\Helldivers 2
+
 Windows SmartScreen may warn because the exe isn't signed: More info > Run anyway.

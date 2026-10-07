@@ -59,6 +59,21 @@ func armorNamesLang() string {
 }
 GO
 
+# and the game folder can be given by HD2_GAME_DIR (a game on another drive / library that
+# Steam's lookup doesn't find); without it the dumper detects the install as before
+grep -q 'app.DetectGameDir()' "$MAIN"
+sed -i 's/gameDir, err := app.DetectGameDir()/gameDir, err := armorNamesGameDir()/' "$MAIN"
+cat >> "$MAIN" <<'GO'
+
+// Super Earth Armory Forge: HD2_GAME_DIR overrides the install detection
+func armorNamesGameDir() (string, error) {
+	if d := os.Getenv("HD2_GAME_DIR"); d != "" {
+		return d, nil
+	}
+	return app.DetectGameDir()
+}
+GO
+
 mkdir -p "$WORK/pkg" "$OUT"
 go build -trimpath -o "$WORK/pkg/armor-set-json-dumper.exe" ./cmd/tools/components/armor-set-json-dumper
 cp LICENSE "$WORK/pkg/LICENSE-filediver.txt"
