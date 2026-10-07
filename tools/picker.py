@@ -32,9 +32,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua")]
 
 MOD_ID = "mods/community/passive_picker_v4"
+QD_ID = "mods/community/super_earth_quad_drop"      # 7.0: Super Earth Quad Drop (its own mod, see tools/quad_drop.lua)
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "6.5"
+VERSION = "7.0"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -1195,6 +1196,54 @@ def cmd_research(args):
     return 0
 
 
+QD_README = """Super Earth Quad Drop v%(v)s
+============================
+Every support-weapon hellpod drops 4 items instead of 1: the weapon, two backpacks of your
+choice, and either a real Supply Box or an extra gun. Pick everything in the in-game Mod Options
+Menu (Support Weapon Backpack 1 / 2, Extra Gun, Supply Box).
+
+Needs (install them once, in your mod manager):
+- Bingus Shared Loader v16+
+- HD2Runtime 0.28.1+ by skyeshade
+- Mod Options Menu v1.1+
+
+Single-player and private lobbies only. Do not run it together with the original
+"HD2 Support Weapon Quad-Drop" (they change the same pods); use one or the other.
+
+Credit: based on "HD2 Support Weapon Quad-Drop" 0.4.2 by Antigravity,
+https://ayakamods.com/mods/support-weapon-quad-drop.4660/ . The original's permission:
+"Anyone is welcome to use, modify, improve, redistribute, or build upon this mod. Please
+retain credit to all contributors." Source: https://github.com/Hung1510/Super-Earth-Armory-Forge
+"""
+
+
+def cmd_quad_drop(args):
+    """Super Earth Quad Drop: the support-weapon four-item drop, as its own mod zip."""
+    with open(os.path.join(HERE, "quad_drop.lua"), encoding="utf-8") as f:
+        body = "-- HD2-Addon: " + QD_ID + "\n" + f.read().replace("@VERSION@", VERSION)
+    ok, err = compile_lua(body)
+    if ok is False:
+        print("Lua FAIL: %s" % err)
+        return 1
+    data = body.encode("utf-8")
+    archive = make_archive({QD_ID: struct.pack("<II", len(data), ENVELOPE_VERSION) + data})
+    display = "Super Earth Quad Drop v%s" % VERSION
+    desc = ("Support weapon pods drop 4 items: the weapon, two backpacks and a Supply Box or an extra gun. "
+            "Needs HD2Runtime 0.28.1+, Bingus Shared Loader and Mod Options Menu.")
+    guid = str(uuid.uuid5(GUID_NS, QD_ID))
+    manifest = {"Version": 1, "Guid": guid, "Name": display, "Description": desc,
+                "Options": [{"Name": display, "Description": desc, "Include": ["Addon"]}]}
+    os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
+    with zipfile.ZipFile(args.zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        _zip_write(z, "manifest.json", (json.dumps(manifest, indent=2) + "\n").encode())
+        _zip_write(z, "Addon/" + ARCHIVE_NAME, archive)
+        _zip_write(z, "Addon/" + ARCHIVE_NAME + ".stream", b"")
+        _zip_write(z, "Addon/" + ARCHIVE_NAME + ".gpu_resources", b"")
+        _zip_write(z, "README.txt", (QD_README % {"v": VERSION}).encode("utf-8"))
+    print("Wrote quad drop   : %s  (%d bytes Lua, guid %s)" % (args.zip, len(data), guid))
+    return 0
+
+
 def cmd_check_dump(args):
     path = args.dump or default_dump_path()
     if not path or not os.path.exists(path):
@@ -1365,6 +1414,9 @@ def main(argv=None):
     rs.add_argument("--weight", choices=list(RESEARCH_WEIGHTS), default="none")
     rs.add_argument("--lut-passive", default="Siege-Ready", help="colour test (F11): armors with this passive")
     rs.set_defaults(func=cmd_research)
+    q = sub.add_parser("quad-drop", help="Super Earth Quad Drop: support weapon pods drop 4 items (its own zip)")
+    q.add_argument("--zip", default="Super-Earth-Quad-Drop.zip")
+    q.set_defaults(func=cmd_quad_drop)
     d = sub.add_parser("check-dump", help="compare the game's passives (passives-dump.txt) with CATALOG")
     d.add_argument("dump", nargs="?", help="path to passives-dump.txt (default: %%LOCALAPPDATA%%\\...\\ArmoryForge)")
     d.set_defaults(func=cmd_check_dump)

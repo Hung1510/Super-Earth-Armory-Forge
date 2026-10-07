@@ -29,7 +29,8 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 - **Requires:** [Bingus Shared Loader](https://ayakamods.com/mods/bingus-shared-loader.3861/)
 - **Single-player / private lobbies only.** Don't use it in public matchmaking.
 - Download: [AyakaMods](https://ayakamods.com/mods/super-earth-armory-forge.4359/) · [GitHub Releases](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest) (full edition) · [Nexus Mods: Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789) (Passive Swap edition)
-- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v6.5.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v6.5.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
+- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v7.0.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v7.0.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
+- **Super Earth Quad Drop** (`Super-Earth-Armory-Forge-Quad-Drop-v7.0.zip`, 7.0): a separate mod, not an armor edition. Every support-weapon hellpod drops 4 items: the weapon, two backpacks and a Supply Box or an extra gun, all picked in the in-game Mod Options Menu. Based on *HD2 Support Weapon Quad-Drop* by Antigravity ([original](https://ayakamods.com/mods/support-weapon-quad-drop.4660/), used with the author's permission). Needs HD2Runtime 0.28.1+, Bingus Shared Loader and Mod Options Menu; don't run it with the original. Build it yourself with `python tools\picker.py quad-drop --zip QuadDrop.zip`.
 - **Support:** the mod is free and always will be. If it's worth a coffee to you, **[tip on Ko-fi](https://ko-fi.com/phamtrangiahung)**. I'd really appreciate it, and it helps me keep updating the mod.
 
 ## Ways to use it
@@ -141,7 +142,7 @@ pip install lupa                                   # optional: Lua syntax check
 python tools\picker.py list                        # every passive, effect, default
 python tools\picker.py build loadout.ini           # preview
 python tools\picker.py build loadout.ini --zip "My Stack.zip"
-python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v6.5.zip   # the release zip (CI names it after the tag)
+python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v7.0.zip   # the release zip (CI names it after the tag)
 ```
 
 The web builder can import and export the same `loadout.ini`.
@@ -175,6 +176,7 @@ Advanced: `raw = 0xHEXID type value, ...` and `raw_stats = stat unk1 unk2, ...` 
 
 ```
 tools/picker.py            catalog, config parser, Lua generator, .patch_0 + zip writer, CLI
+tools/quad_drop.lua      Super Earth Quad Drop (based on Antigravity's Quad-Drop)
 tools/engine.lua           runtime engine: finds the perk records, applies/restores stacks, loadout file
 tools/panel.lua            the F7 in-game panel (drawing, mouse, keyboard)
 tools/lang_zh.lua          the panel in Simplified Chinese (hd2modpj): English -> Chinese tables
@@ -194,6 +196,7 @@ tests/test_panel_layout.py no overlapping or clipped text in any panel view, 720
 tests/test_panel_scale.py  panel size setting, Ctrl +/-, whole-pixel drawing
 tests/test_panel_scroll_drag.py  scrolling long lists, dragging the panel
 tests/test_panel_keys_search.py  Keys tab, bad-key fallback, passive search
+tests/test_quad_drop.py     Super Earth Quad Drop: zip, archive, run against a fake HD2Runtime
 tests/test_swap_edition.py the Passive Swap (Nexus) edition, incl. a hostile save file
 tests/test_controller.py   the whole panel driven with a fake Xbox controller
 tests/test_passive_info.py passive descriptions, armor lists, stack summary, Remove armor

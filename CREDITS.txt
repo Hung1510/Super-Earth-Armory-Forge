@@ -27,6 +27,10 @@ Mascot ............. the idea and behaviour (eyes follow the cursor, boop, dizzy
                      The web builder's mascot uses its "astronaut" sprite sheets
                      (docs/mascot/, licence copied there); the in-game one is drawn from
                      rectangles and shares no art with it.
+Quad Drop .......... Super Earth Quad Drop (tools/quad_drop.lua) is based on "HD2 Support Weapon
+                     Quad-Drop" 0.4.2 by Antigravity, https://ayakamods.com/mods/support-weapon-quad-drop.4660/
+                     ("Anyone is welcome to use, modify, improve, redistribute, or build upon this
+                     mod. Please retain credit to all contributors."). Runs on HD2Runtime by skyeshade.
 Loader ............. Bingus Shared Loader (required)
                      https://ayakamods.com/mods/bingus-shared-loader.3861/
 
