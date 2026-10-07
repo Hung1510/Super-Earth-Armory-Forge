@@ -372,6 +372,10 @@ local function log(message)
     if count == 3 then line = line .. ' (further repeats not logged)' end
     log_lines[#log_lines + 1] = line
     print('[' .. MOD.global .. '] ' .. line)
+    if state.phase == 'ready' and (message:sub(1, 8) == 'booster:' or message:sub(1, 8) == 'wearing:') then
+        pcall(flush_log)                     -- lines after 'ready' were never written to the file before
+        if write_status then pcall(write_status) end
+    end
 end
 
 local function set_status(phase, status)
