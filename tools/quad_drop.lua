@@ -28,7 +28,7 @@ end
 log('Super Earth Quad Drop @VERSION@ entered (based on Quad-Drop 0.4.2 by Antigravity)')
 local runtime,dependency_error
 local ok,value=pcall(require,'mods/skyeshade/hd2runtime')
-if ok then runtime=value else dependency_error=tostring(value);log('Runtime startup import failed: '..dependency_error) end
+if ok then runtime=value else dependency_error=tostring(value) end   -- no HD2Runtime installed: stay silent
 
 local backpack_choices={
  "B-1 Supply Pack",
@@ -432,6 +432,9 @@ local function start_runtime()
 end
 
 local function tick()
+ -- part of Super Earth Armory Forge: without HD2Runtime installed this stays silent (no menu rows, no log noise)
+ runtime=runtime or rawget(_G,'HD2RuntimeLibraryApi1')
+ if type(runtime)~='table' then return end
  if not state.menu then register_menu() end
  if state.menu and not state.runtime then start_runtime() end
 end

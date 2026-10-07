@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-Super Earth Quad Drop (7.0): the support-weapon four-item drop, built as its own zip.
+Super Earth Quad Drop (7.0): the support-weapon four-item drop, a second addon inside the full
+edition's archive (the Passive Swap edition does not get it).
 
     python tests/test_quad_drop.py
 
-1. The zip: manifest, the three archive files, no scripts, credit to Antigravity in the README.
-2. The archive holds the Lua under its own mod id, with the envelope length right, and it compiles.
-3. Run against a fake HD2Runtime + Mod Options Menu: 4 menu categories (one row per toggle / weapon),
+1. The full release zip carries two resources in its one patch file: the armory and Quad Drop (own mod
+   id, envelope length right, compiles); the Passive Swap zip has only the armory. No extra files or scripts.
+2. Run against a fake HD2Runtime + Mod Options Menu: 4 menu categories (one row per toggle / weapon),
    22 guarded operations (17 standard racks with 4 slots written, 5 heavy), every rack asked for
    spawn_count 4, and the Supply Box replaces the extra gun only while its toggle is on.
+3. Without HD2Runtime installed it stays silent: no menu rows, no log noise, nothing registered.
 4. An older Runtime (0.28.0) is refused with a logged error, nothing is written.
 """
+import json
 import os
 import struct
 import sys
@@ -31,35 +34,39 @@ def check(cond, what):
         failed.append(what)
 
 
-class A:
-    def __init__(self, zip):
-        self.zip = zip
+def resources(arc):
+    """name hash -> Lua text of every resource in an archive"""
+    magic, _ver, count = struct.unpack("<III", arc[:12])
+    out = {}
+    for i in range(count):
+        ent = struct.unpack("<7Q6I", arc[104 + 80 * i:104 + 80 * i + 80])
+        blob = arc[ent[2]:ent[2] + ent[7]]
+        size, envv = struct.unpack("<II", blob[:8])
+        out[ent[0]] = (blob[8:].decode("utf-8"), size == len(blob) - 8 and envv == picker.ENVELOPE_VERSION, magic)
+    return out
 
 
 tmp = tempfile.mkdtemp()
-out = os.path.join(tmp, "qd.zip")
-check(picker.cmd_quad_drop(A(out)) == 0, "quad-drop builds")
-z = zipfile.ZipFile(out)
-names = sorted(z.namelist())
-check(names == ["Addon/9ba626afa44a3aa3.patch_0", "Addon/9ba626afa44a3aa3.patch_0.gpu_resources",
-                "Addon/9ba626afa44a3aa3.patch_0.stream", "README.txt", "manifest.json"], "zip holds the manifest, the archive and the README only")
-check(not any(n.endswith((".lua", ".py", ".exe", ".ps1", ".bat")) for n in names), "no scripts or executables in the zip")
-readme = z.read("README.txt").decode()
-check("Antigravity" in readme and "ayakamods.com/mods/support-weapon-quad-drop" in readme, "the README credits Antigravity and links the original")
-check("HD2Runtime 0.28.1" in readme, "the README lists what it needs")
-import json  # noqa: E402
-man = json.loads(z.read("manifest.json"))
-check(man["Name"] == "Super Earth Quad Drop v%s" % picker.VERSION and man["Options"][0]["Include"] == ["Addon"], "manifest name and Addon option")
-
-arc = z.read("Addon/" + picker.ARCHIVE_NAME)
-magic, _ver, count = struct.unpack("<III", arc[:12])
-ent = struct.unpack("<7Q6I", arc[104:184])
-check(magic == picker.MAGIC and count == 1 and ent[0] == picker.resource_hash(picker.QD_ID), "archive: one resource under the Quad Drop mod id")
-blob = arc[ent[2]:ent[2] + ent[7]]
-size, envv = struct.unpack("<II", blob[:8])
-lua = blob[8:].decode("utf-8")
-check(size == len(blob) - 8 and envv == picker.ENVELOPE_VERSION, "archive: envelope length and version")
+full_zip, swap_zip = os.path.join(tmp, "full.zip"), os.path.join(tmp, "swap.zip")
+check(picker.main(["release", "--zip", full_zip]) == 0, "full release builds")
+check(picker.main(["release", "--edition", "swap", "--zip", swap_zip]) == 0, "Passive Swap release builds")
+zf, zs = zipfile.ZipFile(full_zip), zipfile.ZipFile(swap_zip)
+check(not any(n.startswith("Addon/") or "quad" in n.lower().replace("quad_drop.lua", "") for n in zf.namelist()),
+      "no second zip folder or extra patch: Quad Drop rides inside the one patch file")
+check("tools/quad_drop.lua" in zf.namelist(), "its Lua source is in the full zip next to the other sources")
+check("tools/quad_drop.lua" not in zs.namelist(), "the Passive Swap zip has no Quad Drop")
+rf = resources(zf.read(picker.ARCHIVE_NAME))
+rs = resources(zs.read(picker.ARCHIVE_NAME))
+check(len(rf) == 2 and picker.resource_hash(picker.MOD_ID) in rf and picker.resource_hash(picker.QD_ID) in rf,
+      "full edition archive: the armory and Quad Drop")
+check(len(rs) == 1 and picker.resource_hash(picker.MOD_ID) in rs, "Passive Swap archive: the armory only")
+lua, env_ok, magic = rf[picker.resource_hash(picker.QD_ID)]
+check(magic == picker.MAGIC and env_ok, "archive header and Quad Drop envelope length")
 check(lua.startswith("-- HD2-Addon: " + picker.QD_ID + "\n") and "@VERSION@" not in lua, "Lua has the addon marker and the version filled in")
+check("Antigravity" in lua and "ayakamods.com/mods/support-weapon-quad-drop" in lua, "the Lua credits Antigravity and links the original")
+check("Antigravity" in zf.read("CREDITS.txt").decode(), "CREDITS.txt credits Antigravity")
+man = json.loads(zf.read("manifest.json"))
+check("Quad Drop" in man["Description"], "the manifest description mentions Quad Drop")
 ok, err = picker.compile_lua(lua)
 check(ok is not False, "the Lua compiles %s" % (err or ""))
 
@@ -160,6 +167,18 @@ else:
     check(b1.get(b1) != "empty", "Bay 1 backpack is set by default")
     R.handles["support_backpack_pairs.enabled"].value = False
     check(b1.get(b1) == "empty", "Bay 1 off: empty")
+
+    lr0 = LuaRuntime(unpack_returned_tuples=True)
+    new_runtime0 = lr0.execute(HARNESS)
+    R0, menu0, loader0, log0, rows0, ops0, ticks0 = new_runtime0("0.28.1")
+    g0 = lr0.globals()
+    g0.ModOptionsMenu, g0.CowboyBingusModLoader = menu0, loader0
+    lr0.eval("function(s) return load(s, 'quad_drop')() end")(lua)
+    for fn in ticks0.values():
+        fn()
+        fn()
+    check(len(rows0) == 0 and len(ops0) == 0, "without HD2Runtime: no menu rows, nothing registered")
+    check(not any("failed" in x.lower() for x in log0.values()), "without HD2Runtime: no error noise in the log")
 
     lr2, state2, log2, rows2, ops2, R2 = run("0.28.0")
     check(state2["menu"] and not state2["runtime"] and "incompatible" in (state2["error"] or ""), "Runtime 0.28.0 is refused with a logged error")

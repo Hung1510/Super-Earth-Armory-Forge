@@ -27,7 +27,6 @@ jobs:
       # the version in every file name (players asked): Super-Earth-Armory-Forge-v6.2.zip
       - run: python tools/picker.py release --zip "dist/Super-Earth-Armory-Forge-${{ github.ref_name }}.zip"
       - run: python tools/picker.py release --edition swap --zip "dist/Super-Earth-Armory-Forge-Passive-Swap-${{ github.ref_name }}.zip"
-      - run: python tools/picker.py quad-drop --zip "dist/Super-Earth-Armory-Forge-Quad-Drop-${{ github.ref_name }}.zip"
       - run: python tools/release_notes.py "${{ github.ref_name }}" > dist/notes.md
       - uses: softprops/action-gh-release@v2
         with:
@@ -35,4 +34,3 @@ jobs:
           files: |
             dist/Super-Earth-Armory-Forge-${{ github.ref_name }}.zip
             dist/Super-Earth-Armory-Forge-Passive-Swap-${{ github.ref_name }}.zip
-            dist/Super-Earth-Armory-Forge-Quad-Drop-${{ github.ref_name }}.zip
