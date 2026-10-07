@@ -1368,6 +1368,12 @@ function KITS.wear_tick(now)
                         .. (#seen > 0 and table.concat(seen, ',', 1, math.min(#seen, 12)) or 'none'))
                 end
             end
+            -- the game keeps a fresh copy of the loadout when you change the booster on the loadout screen:
+            -- look near the known places again every few seconds so the copy it reads gets the setting too
+            if want and not MOD.swap_only and now >= (W.refresh_at or 0) then
+                W.refresh_at = now + 8
+                KITS.find_start(now, W.spots)
+            end
         else                                    -- the spots are gone (new session?): search where they were
             local near = W.spots
             W.state, W.retry_at = 'idle', now + 5
