@@ -135,6 +135,7 @@ struct.pack_into("<I", g3.mem[LOAD], 0x108, 0x2222)
 struct.pack_into("<I", g3.mem[LOAD], 0x110, 0x4444)
 struct.pack_into("<I", g3.mem[LOAD], 0x800, 0x1111)               # an armor id on its own: not a loadout
 struct.pack_into("<I", g3.mem[LOAD], 0x120, 1)                    # the equipped booster (1 = Vitality) sits next to it
+struct.pack_into("<IIII", g3.mem[LOAD], 0x400, 0x2222, 0x4444, 0x1111, 1)   # the game's layout: helmet, cape, armor, booster
 g3.tick(420)
 lpath = os.path.join(os.environ["LOCALAPPDATA"], "CowboyBingus", "Helldivers2", "ArmoryForge", "loadout-research.txt")
 g3.key(0x79)
@@ -155,6 +156,12 @@ check("CHANGED 0x30000100: armor 0x00001111 (Med-Kit) -> armor 0x00003333 (Infla
 check("place 0x30000100: " in lt and "+32: 1 -> 2   <- booster?" in lt,
       "F10 again: the word that went from booster 1 to booster 2 next to the armor id is flagged")
 check("+0: 4369 -> 13107   <- booster?" not in lt, "... and the armor id changing is not mistaken for a booster")
+
+g3.key(0x72)
+check(struct.unpack_from("<I", g3.mem[LOAD], 0x40C)[0] == 3, "F3: the word after helmet, cape, armor is set to the next booster number (3)")
+check(struct.unpack_from("<I", g3.mem[LOAD], 0x120)[0] == 2, "... and other places are left alone")
+g3.key(0x72)
+check(struct.unpack_from("<I", g3.mem[LOAD], 0x40C)[0] == 4, "F3 again: the next booster (4)")
 
 # ------------------------------------------------------------------ 6. F11: another armor's colours
 arm_pieces = [GAME_BASE + 0x10000 + 24 + 64 + 24 + i * 96 for i in range(3)]   # kit 0x1111, one body

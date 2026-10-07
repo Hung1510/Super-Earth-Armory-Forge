@@ -345,6 +345,41 @@ local function ls_step(now)
     end
 end
 
+-- ================================================================ test D: write the equipped booster
+-- F3 (after F10 found the loadout): in the places where the loadout reads helmet, cape,
+-- armor, ? (the word after the armor id changed 1 -> 2 when the booster went from Vitality
+-- to Stamina), write the next booster number there: 3 Muscle Enhancement, 4 UAV Recon, ...
+-- Then look at the booster screen (leave and enter it) and start a mission. Memory only.
+local SLOT = { v = 2 }
+R.slot = SLOT
+local BNAME = { [0] = 'none', 'Vitality', 'Stamina', 'Muscle Enhancement', 'UAV Recon', 'Increased Reinforcement Budget',
+                'Flexible Reinforcement Budget', 'Hellpod Space Optimization', 'Localization Confusion', 'Expert Extraction Pilot' }
+
+local function slot_next()
+    local places = {}
+    for _, c in ipairs(LS.last or {}) do
+        if c.dh == -8 and c.dc == -4 then places[#places + 1] = c.at + 4 end
+    end
+    if #places == 0 then state.research_note = 'Booster write: press F10 first (no loadout places known)'; return end
+    SLOT.v = (SLOT.v + 1) % 10
+    local n, bad, old = 0, 0, {}
+    for _, at in ipairs(places) do
+        local b = api.read(at, 4)
+        local cur = b and u32(b, 0)
+        if cur and cur <= 21 and api.write(at, u32_bytes(SLOT.v)) then
+            n = n + 1
+            old[cur] = (old[cur] or 0) + 1
+        else
+            bad = bad + 1
+        end
+    end
+    local was = {}
+    for v, k in pairs(old) do was[#was + 1] = v .. ' x' .. k end
+    state.research_note = string.format('Booster write: %d place(s) now say %d (%s); %d skipped', n, SLOT.v, BNAME[SLOT.v] or '?', bad)
+    log(string.format('research: booster write: %d place(s) set to %d (%s), they held %s, %d skipped', n, SLOT.v, BNAME[SLOT.v] or '?',
+        table.concat(was, ', '), bad))
+end
+
 -- ================================================================ test B: another armor's colors
 -- F11: every armor with the test passive (Siege-Ready unless set) takes the colour LUT
 -- (MaterialLut, piece +24) of the next other armor; after the last one, its own again.
@@ -649,6 +684,7 @@ function R.tick(now)
     if BS.auto_at ~= true and now >= BS.auto_at and #R.order > 0 then BS.auto_at = true; pcall(bs_start, now) end
     if pressed(0x73) then pcall(bs_start, now) end              -- F4
     if pressed(0x79) then pcall(ls_start, now) end              -- F10
+    if pressed(0x72) then pcall(slot_next) end                  -- F3
     if pressed(0x7A) then                                       -- F11
         local ok, why = pcall(lut_next)
         if not ok then log('research: colour test: ' .. tostring(why)) end

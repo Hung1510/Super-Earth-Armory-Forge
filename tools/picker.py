@@ -1128,6 +1128,9 @@ What it does:
   Results: ...\\ArmoryForge\\loadout-research.txt
   Boosters: equip a booster (say Vitality), press F10, equip a different one (say Stamina)
   WITHOUT changing armor, press F10 again, and once more with a third. Send the file.
+- F3 (after an F10): writes the next booster number (3, 4, 5 ...) into the booster slot of your
+  loadout. Look at the booster screen (leave it and come back), start a mission, see which
+  booster you have. Memory only.
 - F4 (wait ~30 s after start): booster scan. Looks through memory for the booster
   titles (Dead Sprint, Stun Pods, ...) and dumps what sits around them.
   The mod also checks its own tables for them while it starts up.
