@@ -79,6 +79,7 @@ Then:
 - **Every armor:** *+ Armor* → *Every armor* is one stack that follows you to any armor you wear, so you can change armor and keep the same passives and weight. Keep the armor's own passive or turn it off. A passive with its own tab still uses that tab. Full edition only.
 - Every change applies at once and is saved to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\loadout.ini`, the same format as the web builder, so you can import it there to share. Installing a web-builder build starts fresh from that build; the release zip always keeps what you made.
 - **Recipes:** the **RECIPES** row in an armor tab. A named set of passives (*Medic Tank*, *Ghost*...) that ticks them all in one click, with **Undo**. Save your own from what is ticked; kept in `ArmoryForge\my-recipes.txt`. Full edition only.
+- **Stratagems tab:** on the Hellpod loadout screen (before a mission), **+ Save current loadout** keeps your four stratagems as a named preset, and **Apply to loadout** puts them back with one click. Only stratagems you have unlocked are put in, and not while you are ready. Saved in `ArmoryForge\my-stratagems.txt`. It finds the game's loadout code the same way [Flexible Stratagems](https://github.com/Alomare/FlexibleStratagems) by Alomare does (thanks); nothing runs until you open the tab, and if the game's code changed it turns itself off. Full edition only.
 - **Presets tab:** load a standard preset or one of yours. **+ Save current stack** saves what you have; rename, overwrite or delete your own. Saved in `ArmoryForge\my-presets.txt`.
 - **Quick-swap (F9):** cycles your presets in game without opening the panel (built-ins if you have none saved). Set `swap_hotkey = F9` or `OFF` in `[settings]`.
 - **Undo / Ctrl+Z** takes back the last change (up to 30).
@@ -279,6 +280,7 @@ It only commits when a number changed, never lowers downloads/views, and logs to
 
 ## Credits
 
+- **Alomare**: [Flexible Stratagems](https://github.com/Alomare/FlexibleStratagems) and its research notes on the Hellpod loadout screen, behind the Stratagems tab
 - **mostlycloudy**: Passive Picker v3, where this started: memory-patching engine, archive format, passive data ([AyakaMods](https://ayakamods.com/mods/modular-armor-passives.4350/))
 - **page-mascot** by Kamran Ahmed (MIT): the panel's and the web builder's mascot (idea, behaviour, and the web builder's "astronaut" sprite sheets)
 - **SHODAN**: engine credit, as noted in v3; the panel's drawing, input and font handling are adapted from [SHODAN Stat Editor](https://github.com/SHODAN-HORAI/SHODAN-Stat-Editor) v1.4.1 (public domain)

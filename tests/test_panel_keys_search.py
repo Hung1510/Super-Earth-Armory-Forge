@@ -235,7 +235,17 @@ g10 = FakeGame(build(many), appdata=tempfile.mkdtemp())
 g10.tick(420)
 g10.key(F[7])
 g10.tick(120)
-check(all("tab:%d" % n in g10.regions() for n in range(1, 6)), "5 armor stacks with long names: every tab is reachable")
+def reach(g, n):                                   # visible, or after scrolling the tab row with its arrows
+    for _ in range(6):
+        if "tab:%d" % n in g.regions():
+            return True
+        if "tabs:next" not in g.regions():
+            return False
+        g.click("tabs:next")
+    return False
+
+
+check(all(reach(g10, n) for n in range(1, 6)), "5 armor stacks with long names: every tab is reachable")
 
 # 12 stacks (BONHakyla's case, at 150%): the tab row scrolls with < >, nothing is cut off
 names = [v[0] for k, v in sorted(picker.CATALOG.items()) if k != 7][:12]

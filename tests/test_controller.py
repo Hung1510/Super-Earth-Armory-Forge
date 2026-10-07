@@ -191,10 +191,10 @@ for res, scale in (((3840, 2160), "1.0"), ((2560, 1440), "1.5")):
     for _ in range(5):
         g4.pad("RB")
         st = ui(g4, "settings")
-        seen.append("guide" if st == "guide" else "keys" if st else "presets" if ui(g4, "presets") else "add" if ui(g4, "adding")
+        seen.append("guide" if st == "guide" else "strat" if st == "strat" else "keys" if st else "presets" if ui(g4, "presets") else "add" if ui(g4, "adding")
                     else "armor")
-    check(seen == ["add", "presets", "keys", "guide", "armor"],
-          "%dx%d at %s: RB cycles + Armor, Presets, Keys, Guide, armor (%s)" % (res[0], res[1], scale, seen))
+    check(seen == ["add", "presets", "strat", "keys", "guide"],
+          "%dx%d at %s: RB cycles + Armor, Presets, Stratagems, Keys, Guide (%s)" % (res[0], res[1], scale, seen))
 
 # reopening with the controller after the mouse moved keeps controller mode
 g5 = FakeGame(build(sink), appdata=tempfile.mkdtemp())

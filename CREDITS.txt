@@ -21,6 +21,12 @@ Armor weight ....... the armor kit record layout comes from FileDiver by xypwn
 日本語 ............. the Japanese panel (tools/lang_ja.lua) uses the game's own Japanese
                      passive and armor names (read from a game install with FileDiver,
                      tools/armor-names/); the rest was translated for the panel
+Stratagem presets .. how the game's Hellpod loadout screen is found and driven (byte signatures,
+                     the slot widget setter, the slots-changed refresh, the loadout save, the
+                     rule that a stratagem must be on the loadout list's offers) comes from the
+                     research notes and mod "Flexible Stratagems" by Alomare
+                     https://github.com/Alomare/FlexibleStratagems
+                     (also on Nexus). The search code in tools/strat.lua is written for this mod.
 Web builder ........ uses JSZip (MIT) - docs/vendor/
 Mascot ............. the idea and behaviour (eyes follow the cursor, boop, dizzy) are from
                      page-mascot by Kamran Ahmed (MIT) https://github.com/nilbuild/page-mascot

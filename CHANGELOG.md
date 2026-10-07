@@ -2,6 +2,7 @@
 
 ## 6.6 (2026-10-07)
 Full edition (the Passive Swap edition is unchanged; it gets 6.5's faster start):
+- **Stratagems tab:** save your four stratagems from the Hellpod loadout screen as a named preset and put them back with one click. Open the tab on the loadout screen (before a mission), **+ Save current loadout**, and later **Apply to loadout**. It uses the game's own calls for picking a stratagem, only puts in stratagems you have unlocked, and refuses while you are ready or when the loadout screen is not open. Presets are kept in `ArmoryForge\my-stratagems.txt`. Nothing runs until the tab is opened, and if a game update moves the code it relies on, the tab says so and does nothing. How the loadout screen is found and driven comes from the research notes and mod *Flexible Stratagems* by Alomare (thanks).
 - **Recipes:** a new **RECIPES** row in every armor tab. A recipe is a named set of passives, for example *Medic Tank = Fortified + Unflinching + Extra Padding + Supplemental Adrenaline*. Pick one and click **Add to stack** (ticks them all) or **Only this** (the stack becomes exactly that); **Undo** takes it back. Five come with the mod (Medic Tank, Ghost, Demolitionist, Gunner, Survivor). **+ Save ticked passives as recipe** keeps what you have ticked as your own; rename or delete it any time. Yours are saved in `ArmoryForge\my-recipes.txt` (one line each: `Name | Passive | Passive`), and `loadout.ini` is unchanged. A recipe never changes values, only ticks.
 
 ## 6.5 (2026-10-07)

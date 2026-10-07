@@ -716,6 +716,58 @@ function PP.save_user()
     return write_file(path, table.concat(L, '\r\n'))
 end
 
+-- ---------------------------------------------------------------- stratagem presets
+-- Saved in ArmoryForge\my-stratagems.txt, one per line: Name | Stratagem | Stratagem | Stratagem | Stratagem
+-- ("-" is an empty slot). The names are the game's own internal stratagem names, so they hold across updates.
+function PP.load_strat()
+    PP.strat_user = {}
+    local text = read_saved('my-stratagems.txt')
+    if not text then return end
+    for line in (text .. '\n'):gmatch('([^\n]*)\n') do
+        line = line:gsub('\r$', '')
+        if line ~= '' and not line:match('^%s*;') then
+            local parts = {}
+            for part in (line .. '|'):gmatch('([^|]*)|') do parts[#parts + 1] = part:match('^%s*(.-)%s*$') end
+            if #parts >= 2 and parts[1] ~= '' then
+                local slots = {}
+                for k = 1, 4 do slots[k] = (parts[k + 1] and parts[k + 1] ~= '' and parts[k + 1] ~= '-') and parts[k + 1] or false end
+                PP.strat_user[#PP.strat_user + 1] = { name = parts[1], slots = slots }
+            end
+        end
+    end
+end
+
+function PP.save_strat()
+    local path = forge_file('my-stratagems.txt')
+    if not path then return false end
+    local L = { '; Super Earth Armory Forge: your stratagem presets, saved by the in-game panel. Name | Stratagem x4 (- = empty)' }
+    for _, r in ipairs(PP.strat_user or {}) do
+        local cells = {}
+        for k = 1, 4 do cells[k] = r.slots[k] or '-' end
+        L[#L + 1] = r.name .. ' | ' .. table.concat(cells, ' | ')
+    end
+    L[#L + 1] = ''
+    return write_file(path, table.concat(L, '\r\n'))
+end
+
+-- each frame while the Stratagems tab is shown: the search for the game's code, and the slots on screen
+function PP.strat_service(now)
+    pcall(STRAT.tick)
+    local sig
+    if now >= (ui.strat_at or 0) then
+        ui.strat_at = now + 0.4
+        local ok, slots, why = pcall(STRAT.read_loadout)
+        if not ok then slots, why = nil, tostring(slots) end
+        ui.strat_now, ui.strat_why = slots or nil, why
+        sig = STRAT.state .. '|' .. tostring(why) .. '|' .. (slots and table.concat((function()
+            local t = {}
+            for k = 1, 4 do t[k] = tostring(slots[k]) end
+            return t
+        end)(), ',') or '-')
+        if sig ~= ui.strat_sig then ui.strat_sig = sig; ui.version = ui.version + 1 end
+    end
+end
+
 -- ---------------------------------------------------------------- recipes
 -- A recipe is a named set of armor passives. Applying one ticks them in the current stack,
 -- so nothing new is stored in loadout.ini. The player's own are kept in
@@ -1091,6 +1143,7 @@ function PP.report()
         'last panel error=' .. tostring(d.last_error or '-'),
         PP.input_desc(),
         'language=' .. tostring(ui.lang or 'en') .. '; font test: ' .. tostring(PP.font_result or 'not run'),
+        'stratagem presets=' .. tostring(STRAT.state) .. (STRAT.why and (' (' .. tostring(STRAT.why) .. ')') or ''),
         '--- other mods ---',
         'loader api=' .. tostring(type(loader) == 'table' and loader.api) .. ' fields: ' .. PP.names_of(loader, 12),
         'update bus jobs: ' .. PP.names_of(type(bus) == 'table' and bus.jobs, 20),
@@ -1355,7 +1408,7 @@ local function draw(width, height)
     local regions = {}
     ui.tab_order = {}                        -- tab keys left to right (LB / RB), drawn or not
     for n = 1, #(LOADOUT and LOADOUT.profiles or {}) do ui.tab_order[n] = 'tab:' .. n end
-    for _, k in ipairs({ 'add', 'presets', 'settings', 'guide' }) do ui.tab_order[#ui.tab_order + 1] = k end
+    for _, k in ipairs(MOD.swap_only and { 'add', 'presets', 'settings', 'guide' } or { 'add', 'presets', 'strat', 'settings', 'guide' }) do ui.tab_order[#ui.tab_order + 1] = k end
     local ink_font, ink_material = font.font, font.material
     local up = string.upper
 
@@ -1626,7 +1679,7 @@ local function draw(width, height)
     local x = 22
     -- armor tabs share what the other tabs and "Remove this stack" leave; long names are cut
     local fixed = 0
-    for _, c in ipairs({ '+ Armor', 'Presets', 'Keys', 'Guide' }) do fixed = fixed + math.min(230, measure(up(c), 15) + 30) + 6 end
+    for _, c in ipairs({ '+ Armor', 'Presets', 'Stratagems', 'Keys', 'Guide' }) do fixed = fixed + math.min(230, measure(up(c), 15) + 30) + 6 end
     local room = W - 22 - (measure('CLICK AGAIN TO REMOVE', 13) + 28 + 12) - 22 - fixed
     local count = #LOADOUT.profiles
     local each_tab = math.max(60, math.min(230, room / math.max(1, count) - 6))
@@ -1662,6 +1715,7 @@ local function draw(width, height)
     end
     x = x + tab('add', '+ Armor', x, ui.adding, C.YELLOW) + 6
     x = x + tab('presets', 'Presets', x, ui.presets, C.YELLOW) + 6
+    if not MOD.swap_only then x = x + tab('strat', 'Stratagems', x, ui.settings == 'strat', C.YELLOW) + 6 end
     x = x + tab('settings', 'Keys', x, ui.settings == 'keys', C.MUTED) + 6
     tab('guide', 'Guide', x, ui.settings == 'guide', C.MUTED)
     if p and not ui.adding and not ui.presets and not ui.settings then
@@ -1868,6 +1922,70 @@ local function draw(width, height)
             else text(MOD.swap_only and 'Loading replaces your current swaps (Undo brings them back).'
                       or 'Loading replaces your current stacks (Undo brings them back).', RX, by + 46, 12, C.DIM, RIW) end
         end
+
+    -- ============================================================ Stratagems (presets for the loadout screen)
+    elseif ui.settings == 'strat' and not MOD.swap_only then
+        if not PP.strat_user then PP.load_strat() end
+        local list = PP.strat_user
+        head(IX, TOP + 14, 'Hellpod loadout', 'Stratagem presets', IW)
+        local y = TOP + 64
+        label('Your stratagem presets', IX, y)
+        text(#list .. ' SAVED', IX + IW, y, 11, #list > 0 and C.YELLOW or C.DIM, nil, 'right')
+        y = y + 18
+        local first, fit = scroller('strat', y, BOT - 54, #list)
+        for k = first + 1, math.min(#list, first + fit) do
+            local key, chosen = 'sp:' .. k, ui.ssel == k
+            if ui.naming and ui.naming.strat and ui.naming.i == k then
+                list_row(key, y, ui.naming.text .. '_', chosen, ui.naming.fresh and C.MUTED or C.YELLOW)
+            else list_row(key, y, list[k].name, chosen) end
+            y = y + RH
+        end
+        bar.w = 0
+        if #list == 0 then text('None yet. Pick four stratagems, then save them.', IX + 4, y + 4, 13, C.DIM, IW - 8) end
+        button('ssave', '+ Save current loadout', IX, BOT - 44, IW, 32, ui.strat_now ~= nil, true)
+
+        local function slot_rows(y2, slots, ink)
+            for k = 1, 4 do
+                rect(RX, y2, RIW, 26, C.ROW, 950)
+                text(tostring(k), RX + 10, y2 + 6, 13, C.YELLOW, 20)
+                local nm = slots[k]
+                text(nm and up(STRAT.pretty(nm)) or 'EMPTY', RX + 34, y2 + 6, 13, nm and (ink or C.TEXT) or C.DIM, RIW - 44)
+                y2 = y2 + 30
+            end
+            return y2
+        end
+        local entry = ui.ssel and list[ui.ssel]
+        local y2 = TOP + 14
+        label('On the loadout screen now', RX, y2, nil, RIW)
+        y2 = y2 + 22
+        if ui.strat_now then
+            y2 = slot_rows(y2, ui.strat_now)
+        else
+            local why = ui.strat_why
+            if STRAT.state == 'searching' or STRAT.state == 'starting' then why = 'Finding the game\'s loadout code...' end
+            y2 = wrap(why or 'Open the Hellpod loadout screen (before a mission).', RX, y2, 13,
+                      STRAT.state == 'off' and C.BAD or C.YELLOW, RIW, 3) + 8
+        end
+        y2 = y2 + 8
+        if entry then
+            rect(RX, y2, RIW, 1, C.LINE, 951)
+            label('Preset: ' .. entry.name, RX, y2 + 10, nil, RIW)
+            y2 = slot_rows(y2 + 32, entry.slots, C.YELLOW)
+            local by = math.max(y2 + 8, BOT - 96)
+            local bx = RX
+            local sure = ui.confirm and ui.confirm.kind
+            bx = bx + button('sapply', 'Apply to loadout', bx, by, nil, 34, ui.strat_now ~= nil, true) + 8
+            bx = bx + button('sover', sure == 'sover' and 'Click again' or 'Save current here', bx, by, nil, 34, ui.strat_now ~= nil) + 8
+            bx = bx + button('sren', 'Rename', bx, by, nil, 34, true) + 8
+            button('sdel', sure == 'sdel' and 'Click again' or 'Delete', bx, by, nil, 34, true, false, sure == 'sdel' and C.BAD or nil)
+            if ui.naming and ui.naming.strat then text('Type a name, Enter to keep it, Esc to cancel.', RX, by + 46, 13, C.YELLOW, RIW)
+            else text('Only stratagems you have unlocked are put in. Not while you are ready.', RX, by + 46, 12, C.DIM, RIW) end
+        else
+            y2 = wrap('Pick four stratagems on the loadout screen, then "+ Save current loadout". Click a saved one to put it back.',
+                      RX, y2, 13, C.MUTED, RIW, 3)
+        end
+        local rep = STRAT.report()
+        if STRAT.state ~= 'ready' and STRAT.state ~= 'idle' then text(rep[1], RX, BOT - 24, 11, C.DIM, RIW) end
 
     -- ============================================================ Keys (settings)
     elseif ui.settings == 'guide' then
@@ -2513,10 +2631,10 @@ local function finish_naming(keep)
     ui.version = ui.version + 1
     if not nm or not keep then return end
     local name = PP.clean_name(nm.text)
-    local entry = nm.rec and PP.rec_user[nm.i] or PP.user[nm.i]
+    local entry = nm.strat and PP.strat_user[nm.i] or nm.rec and PP.rec_user[nm.i] or PP.user[nm.i]
     if name and entry then
         entry.name = name
-        if nm.rec then PP.save_recipes() else PP.save_user() end
+        if nm.strat then PP.save_strat() elseif nm.rec then PP.save_recipes() else PP.save_user() end
         say('Saved as "' .. name .. '"')
     end
 end
@@ -2538,6 +2656,13 @@ local function click(key)
         if arg == 'clear' then PP.set_search('', false) else PP.set_search(ui.search, true) end
     elseif kind == 'settings' then ui.settings, ui.adding, ui.presets = ui.settings ~= 'keys' and 'keys' or false, false, false
     elseif kind == 'guide' then ui.settings, ui.adding, ui.presets = ui.settings ~= 'guide' and 'guide' or false, false, false
+    elseif kind == 'strat' and not MOD.swap_only then
+        ui.settings, ui.adding, ui.presets = ui.settings ~= 'strat' and 'strat' or false, false, false
+        if ui.settings == 'strat' then
+            if not PP.strat_user then PP.load_strat() end
+            pcall(STRAT.request)
+            ui.strat_at = 0
+        end
     elseif kind == 'wear' then                     -- the header: go to your armor's tab, or add it
         local wr = PP.wearing()
         if wr.tab then
@@ -2618,6 +2743,46 @@ local function click(key)
         end
     elseif kind == 'copy' and not MOD.swap_only then PP.copy_code()
     elseif kind == 'paste' and not MOD.swap_only then PP.paste_code()
+    -- stratagem presets
+    elseif kind == 'sp' and n then ui.ssel = n
+    elseif kind == 'ssave' and not MOD.swap_only then
+        if not ui.strat_now then say(ui.strat_why or 'Open the Hellpod loadout screen first'); return end
+        local slots = {}
+        for k = 1, 4 do slots[k] = ui.strat_now[k] or false end
+        local base, k = 'My stratagems', #PP.strat_user + 1
+        local taken = {}
+        for _, u in ipairs(PP.strat_user) do taken[u.name] = true end
+        while taken[base .. ' ' .. k] do k = k + 1 end
+        PP.strat_user[#PP.strat_user + 1] = { name = base .. ' ' .. k, slots = slots }
+        PP.save_strat()
+        ui.ssel = #PP.strat_user
+        ui.naming = { i = #PP.strat_user, text = base .. ' ' .. k, fresh = true, strat = true }
+        say('Saved. Type a name for it, or press Enter to keep "' .. base .. ' ' .. k .. '".', 5)
+    elseif kind == 'sapply' and ui.ssel and PP.strat_user[ui.ssel] then
+        local ok, done, why, skipped = pcall(STRAT.apply, PP.strat_user[ui.ssel].slots)
+        if not ok then why = tostring(done); done = false end
+        if done then
+            local e = PP.strat_user[ui.ssel]
+            if skipped and #skipped > 0 then say('Applied "' .. e.name .. '". Skipped: ' .. table.concat(skipped, ', '), 6)
+            else say('Applied "' .. e.name .. '"') end
+            ui.strat_at = 0
+        else say(tostring(why), 6) end
+    elseif kind == 'sover' and ui.ssel and PP.strat_user[ui.ssel] then
+        if not ui.strat_now then say(ui.strat_why or 'Open the Hellpod loadout screen first'); return end
+        if confirm('sover') then
+            for k = 1, 4 do PP.strat_user[ui.ssel].slots[k] = ui.strat_now[k] or false end
+            PP.save_strat()
+            say('Saved your current slots into "' .. PP.strat_user[ui.ssel].name .. '"')
+        end
+    elseif kind == 'sren' and ui.ssel and PP.strat_user[ui.ssel] then
+        ui.naming = { i = ui.ssel, text = PP.strat_user[ui.ssel].name, fresh = true, strat = true }
+    elseif kind == 'sdel' and ui.ssel and PP.strat_user[ui.ssel] then
+        if confirm('sdel') then
+            local gone = table.remove(PP.strat_user, ui.ssel)
+            PP.save_strat()
+            ui.naming, ui.ssel = nil, nil
+            say('Deleted "' .. gone.name .. '"')
+        end
     -- recipes
     elseif kind == 'rpick' and n then ui.rsel = n
     elseif kind == 'rpage' and n then ui.rpage = (ui.rpage or 0) + n
@@ -3085,7 +3250,7 @@ if not PP.bit then
     local ok, b = pcall(require, 'bit')
     PP.bit = ok and b or nil
 end
-PP.LIST_ROW = { sel = true, tick = true, addpick = true, swap = true, pre = true, rpick = true }
+PP.LIST_ROW = { sel = true, tick = true, addpick = true, swap = true, pre = true, rpick = true, sp = true }
 
 -- read the controller once per frame; sticks become D-pad / virtual buttons
 function PP.pad_read()
@@ -3179,7 +3344,7 @@ end
 function PP.tab_step(step)
     local tabs = ui.tab_order or {}
     if #tabs == 0 then return end
-    local active = ui.settings == 'guide' and 'guide' or ui.settings and 'settings' or ui.presets and 'presets' or ui.adding and 'add' or ('tab:' .. ui.tab)
+    local active = ui.settings == 'guide' and 'guide' or ui.settings == 'strat' and 'strat' or ui.settings and 'settings' or ui.presets and 'presets' or ui.adding and 'add' or ('tab:' .. ui.tab)
     local at = 1
     for i, k in ipairs(tabs) do if k == active then at = i end end
     local k = tabs[(at - 1 + step) % #tabs + 1]
@@ -3327,6 +3492,7 @@ local function panel_frame(now)
         return
     end
     ui.waiting_since = nil
+    if ui.settings == 'strat' then PP.strat_service(now) end
     local world = overlay_world()
     if not world then PP.note('no_world'); clear_gui(); return end
     if ui.world ~= world then
