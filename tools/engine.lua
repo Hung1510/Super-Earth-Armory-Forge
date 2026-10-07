@@ -589,6 +589,19 @@ local function fmt_num(v)
     return s
 end
 
+-- Booster numbers (the game's Booster enum, in file order) the loadout can name. Full edition only.
+local BOOSTER_NAMES = { [0] = 'None', 'Vitality', 'Stamina', 'Muscle Enhancement', 'UAV Recon', 'Increased Reinforcement Budget',
+                        'Flexible Reinforcement Budget', 'Hellpod Space Optimization', 'Localization Confusion', 'Expert Extraction Pilot' }
+local BOOSTER_BY_KEY = { fastextraction = 9, muscle = 3, uav = 4, hellpod = 7 }
+for n, name in pairs(BOOSTER_NAMES) do BOOSTER_BY_KEY[name:lower():gsub('[^%w]', '')] = n end
+local function parse_booster(val)
+    local key = val:lower():gsub('[^%w]', '')
+    if key == '' or key == 'off' or key == 'game' or key == 'default' then return nil end
+    local n = tonumber(key)
+    if n and n >= 0 and n <= 9 and n == math.floor(n) then return n end
+    return BOOSTER_BY_KEY[key]
+end
+
 local function serialize(l, base_key)
     local L = {
         '; Super Earth Armory Forge loadout, saved by the in-game panel (' .. (l.hotkey or 'F7') .. ').',
@@ -601,6 +614,7 @@ local function serialize(l, base_key)
         'swap_hotkey = ' .. (l.swap_hotkey or 'F9'),
         'panel_scale = ' .. string.format('%.1f', l.panel_scale or 1),
     }
+    if l.booster and not MOD.swap_only then L[#L + 1] = 'booster = ' .. BOOSTER_NAMES[l.booster] end
     if base_key then L[#L + 1] = 'base   = ' .. base_key end
     for _, p in ipairs(l.profiles) do
         local c = CAT[p.perk]
@@ -703,6 +717,14 @@ local function parse_loadout(text)
                         local sc = tonumber((val:gsub('%%$', '')))
                         if sc and val:find('%%$') then sc = sc / 100 end
                         if sc then l.panel_scale = math.max(0.8, math.min(2.0, math.floor(sc * 10 + 0.5) / 10)) end
+                    elseif k == 'booster' and not MOD.swap_only then
+                        l.booster = parse_booster(val)
+                        local vk = val:lower():gsub('[^%w]', '')
+                        if vk ~= '' and not l.booster and vk ~= 'off' and vk ~= 'game' and vk ~= 'default' then
+                            log('loadout: booster = ' .. val .. ' is not a booster (none, Vitality, Stamina, Muscle Enhancement, UAV Recon, '
+                                .. 'Increased Reinforcement Budget, Flexible Reinforcement Budget, Hellpod Space Optimization, '
+                                .. 'Localization Confusion, Expert Extraction Pilot, or 0..9); leaving the game\'s own')
+                        end
                     elseif k == 'base' then l.base = val end
                 elseif k and prof then
                     local lk = k:lower()
@@ -1307,7 +1329,7 @@ function KITS.wear_tick(now)
             if api.now() >= deadline then break end
         end
     elseif W.state == 'watching' and now >= W.check_at then
-        W.check_at = now + (panel_open() and 1 or 3)     -- closed panel: nobody is looking
+        W.check_at = now + ((panel_open() or (LOADOUT and LOADOUT.booster)) and 1 or 3)     -- closed panel: nobody is looking
         local votes, best, n = {}, nil, 0
         for _, addr in ipairs(W.spots) do
             local b = api.read(addr - 8, 12)
@@ -1321,6 +1343,23 @@ function KITS.wear_tick(now)
             if best ~= KITS.worn then
                 KITS.worn = best
                 log('wearing: ' .. KITS.name(best))
+            end
+            -- booster = ...: the loadout reads helmet, cape, armor, booster. Only the copies that hold the
+            -- armor being worn are touched, and only a word that already holds a booster number (0..21).
+            local want = LOADOUT and LOADOUT.booster
+            if want and not MOD.swap_only then
+                local set, held = 0, nil
+                for _, addr in ipairs(W.spots) do
+                    local b = api.read(addr - 8, 16)
+                    if b and #b == 16 and u32(b, 8) == best and KITS.ids[u32(b, 0)] == 1 and KITS.ids[u32(b, 4)] == 2 then
+                        local cur = u32(b, 12)
+                        if cur <= 21 and cur ~= want and api.write(addr + 4, u32_bytes(want)) then set = set + 1; held = cur end
+                    end
+                end
+                if set > 0 then
+                    log('booster: ' .. BOOSTER_NAMES[want] .. ' written to ' .. set .. ' loadout place(s) (they held ' .. tostring(held) .. ')')
+                    state.booster_note = BOOSTER_NAMES[want]
+                end
             end
         else                                    -- the spots are gone (new session?): search where they were
             local near = W.spots

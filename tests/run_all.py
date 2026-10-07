@@ -40,6 +40,7 @@ SUITES = [
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
     ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
+    ("test_booster_slot.py", "booster = loadout setting (6.5, experimental)"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),
     ("test_swap_edition.py", "Passive Swap edition (Nexus build)"),
     ("test_release.py", "release zips, blank install, old saves"),

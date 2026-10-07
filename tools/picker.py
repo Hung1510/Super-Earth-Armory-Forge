@@ -268,8 +268,8 @@ def load_config_text(text, source="<loadout>"):
                 if pv not in TRUE and pv not in FALSE - {""}:
                     raise ConfigError("[settings]: panel must be on or off, got '%s'" % v.strip())
                 settings["panel"] = pv in TRUE      # off: no panel, no hotkeys, no controller polling
-            elif k == "base":
-                pass            # written by the in-game panel; only the game reads it
+            elif k in ("base", "booster"):
+                pass            # written by the in-game panel / only the game reads it (booster: 6.5, full edition)
             else:
                 raise ConfigError("[settings]: unknown key '%s'" % k)
 

@@ -92,6 +92,7 @@ Then:
 - **Language:** English, 简体中文 or 日本語 on the Keys tab ([Languages](#languages)).
 - **Mascot:** a little robot in the top-left box follows your cursor; click it to boop it. Keys tab → Mascot turns it off.
 - **Edit `loadout.ini` while playing:** save the file and the mod reloads it within a couple of seconds (what it no longer lists goes back to the game's values; Undo works).
+- **`booster = Stamina` in `[settings]` (full edition, experimental, off by default):** writes that booster into the loadout slot next to your armor id whenever the game shows your worn armor. One booster only, not stacking, and the slot is not confirmed in game yet; if nothing changes, remove the line. Names: Vitality, Stamina, Muscle Enhancement, UAV Recon, Increased Reinforcement Budget, Flexible Reinforcement Budget, Hellpod Space Optimization, Localization Confusion, Expert Extraction Pilot; `off` leaves the game alone.
 - **Keys tab:** pick the panel key (F1–F12) and the quick-swap key (F1–F12 or off). Also `hotkey = F7` / `swap_hotkey = F9` in `[settings]`. A bad key there falls back to F7 / F9, so the panel always opens. SHODAN Stat Editor uses F8, and its panel sits on the right while this one sits on the left.
 - If a change doesn't show, re-equip the armor or start a mission.
 
@@ -212,6 +213,7 @@ tools/armor-names/         builds FileDiver's armor dumper for Windows (CI: armo
 tools/armor_names.py       FileDiver's armor list -> tools/armor-names.json (ids to names), checked against the game's kits
 tools/booster-names/        a booster dumper added to FileDiver for Windows (CI: booster-names-tool.yml): the booster enum, texts and files, read from a game install
 tests/test_booster_tool.py     the booster names tool: build script, runner, dumper source, workflow
+tests/test_booster_slot.py     the experimental `booster =` setting
 tests/test_armor_names.py  the name table conversion and game check
 tools/passives.json        plain description + armors per passive (wiki data; corrections welcome)
 tests/run_all.py           runs every suite and prints one summary

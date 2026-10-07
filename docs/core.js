@@ -194,7 +194,7 @@
             if (!TRUE.has(pv) && !["off", "no", "false", "0", "n"].includes(pv))
               throw new ConfigError(`[settings]: panel must be on or off, got '${v.trim()}'`);
             settings.panel = TRUE.has(pv); // off: no panel, no hotkeys, no controller polling
-          } else if (k === "base") { /* written by the in-game panel; only the game reads it */ }
+          } else if (k === "base" || k === "booster") { /* written by the in-game panel / only the game reads it (booster: 6.5, full edition) */ }
           else throw new ConfigError(`[settings]: unknown key '${k}'`);
         }
         continue;

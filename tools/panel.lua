@@ -520,10 +520,11 @@ end
 
 -- Swap in a whole loadout (preset, share code, undo). The player's own keys and
 -- retire setting stay unless `exact` (undo).
-function PP.replace(l, text, exact)
+function PP.replace(l, text, exact, from_file)
     if not exact and LOADOUT then
         l.hotkey, l.swap_hotkey, l.retire = LOADOUT.hotkey, LOADOUT.swap_hotkey, LOADOUT.retire
         l.panel_scale = LOADOUT.panel_scale
+        if not from_file then l.booster = LOADOUT.booster end   -- a preset or share code never changes the booster; the ini does
     end
     l.name = l.name or (LOADOUT and LOADOUT.name) or MOD.title
     l.hotkey, l.swap_hotkey = l.hotkey or MOD.hotkey or 'F7', l.swap_hotkey or MOD.swap_hotkey or 'F9'
@@ -3361,7 +3362,7 @@ function PP.watch_file(now)
     end
     state.disk_text, PP.bad_text, PP.seen_text = text, nil, nil
     l.name = l.name or LOADOUT.name
-    PP.replace(l, 'loadout.ini changed: reloaded (' .. #l.profiles .. ' armor stack' .. (#l.profiles == 1 and '' or 's') .. ')')
+    PP.replace(l, 'loadout.ini changed: reloaded (' .. #l.profiles .. ' armor stack' .. (#l.profiles == 1 and '' or 's') .. ')', false, true)
     log('loadout.ini changed on disk: reloaded, ' .. #l.profiles .. ' stack(s)')
 end
 
