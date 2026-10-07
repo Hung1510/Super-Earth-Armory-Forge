@@ -1,13 +1,11 @@
 # Changelog
 
 ## 7.0 (2026-10-07)
-Full edition:
-- **Quad Drop is part of Armory Forge now:** every support-weapon hellpod drops 4 items: the weapon, two backpacks of your choice, and a real Supply Box or an extra gun. Set it up in the in-game **Mod Options Menu** (Support Weapon Backpack 1, Backpack 2, Extra Gun, Supply Box). Based on *HD2 Support Weapon Quad-Drop* 0.4.2 by **Antigravity** (used with the author's permission: anyone may use, modify and redistribute it with credit). Needs HD2Runtime 0.28.1+ (skyeshade) and Mod Options Menu installed; without HD2Runtime it does nothing. Do not run it together with the original Quad-Drop. Single-player and private lobbies only.
-- The Passive Swap edition is unchanged from 6.5.
-
-## 6.5 (2026-10-07)
 Both editions (full and Passive Swap):
 - **Faster start:** the search for the game's passive table now reads memory four bytes at a time instead of one, about 2.5x faster in a benchmark, so the mod finishes its first search sooner and takes less of each frame while it runs. If a game build ever stores the table off that grid, the mod notices it found nothing and searches byte by byte, as before.
+
+Full edition:
+- **Quad Drop is part of Armory Forge now:** every support-weapon hellpod drops 4 items: the weapon, two backpacks of your choice, and a real Supply Box or an extra gun. Set it up in the in-game **Mod Options Menu** (Support Weapon Backpack 1, Backpack 2, Extra Gun, Supply Box). Based on *HD2 Support Weapon Quad-Drop* 0.4.2 by **Antigravity** (used with the author's permission: anyone may use, modify and redistribute it with credit). Needs HD2Runtime 0.28.1+ (skyeshade) and Mod Options Menu installed; without HD2Runtime it does nothing. Do not run it together with the original Quad-Drop. Single-player and private lobbies only.
 
 ## 6.4 (2026-10-07)
 Both editions (full and Passive Swap):
