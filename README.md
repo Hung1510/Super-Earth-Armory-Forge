@@ -198,7 +198,8 @@ tests/test_swap_edition.py the Passive Swap (Nexus) edition, incl. a hostile sav
 tests/test_controller.py   the whole panel driven with a fake Xbox controller
 tests/test_passive_info.py passive descriptions, armor lists, stack summary, Remove armor
 tests/test_report_share.py panel off, short share codes, the problem report
-tools/research.lua         research builds only (`picker.py research`): armor kit dump, weight experiment
+tools/research.lua         research builds only (`picker.py research`): armor kit dump, weight experiment, booster scan
+tools/booster-anchors.json  booster title string ids the research scan looks for
 tests/test_research.py     the research build, and that no release carries it
 tests/test_wearing.py      what you wear, one armor's weight, the game's input while the panel is open
 tests/test_every_armor.py  the Every armor stack: a setup that stays whatever armor you wear

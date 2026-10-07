@@ -12,6 +12,7 @@ The research build (python tools/picker.py research): armor kit dump + weight ex
    helmets and capes are left alone, and passives still apply as usual.
 4. With --weight none, nothing in memory changes.
 """
+import json
 import os
 import struct
 import sys
@@ -169,6 +170,40 @@ g2.tick(1200)
 text2 = dump_of(g2)
 check("experiment none (dump only)" in text2 and "pieces changed 0" in text2, "--weight none only dumps")
 check(all(weight_now(g2, a) == w for kind in pieces2.values() for a, _, w in kind), "... and changes nothing in memory")
+
+# ------------------------------------------------------------------ 7. boosters: where are the definitions?
+ANCH = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools", "booster-anchors.json")))
+by_name = {}
+for k, v in ANCH.items():
+    by_name.setdefault(v, int(k))
+check(len(ANCH) >= 28 and len(by_name) == 15, "booster-anchors.json: 15 booster titles, upper and cased ids (%d ids)" % len(ANCH))
+check("[%s]=%s" % (by_name["Dead Sprint"], json.dumps("Dead Sprint")) in open(build(None), encoding="utf-8").read(),
+      "the research build carries the anchor ids")
+g4, _ = game_with_kits(build(None))
+BLK = len(g4.mem[GAME_BASE])                               # appended after the kits
+payload = bytearray(1024)
+for i, name in enumerate(("Dead Sprint", "Stun Pods", "Armed Resupply Pods")):
+    struct.pack_into("<IIff", payload, i * 64, by_name[name], i + 10, 1.5 + i, 0.25)
+struct.pack_into("<I", payload, 700, 0x12345678)
+hdr = b"LDLD" + struct.pack("<III", 1, 0xB0057E50, len(payload)) + b"\0" * 8
+g4.mem[GAME_BASE][BLK:BLK + len(hdr) + len(payload)] = hdr + bytes(payload)
+g4.mem[0x31000000] = bytearray(0x4000)                       # not an LDLD block: a cluster in plain memory
+for i, name in enumerate(("Firebomb Hellpods", "Dead Sprint", "Muscle Enhancement")):
+    struct.pack_into("<II", g4.mem[0x31000000], 0x200 + i * 48, by_name[name], i)
+g4.tick(1200)
+bpath = os.path.join(os.environ["LOCALAPPDATA"], "CowboyBingus", "Helldivers2", "ArmoryForge", "boosters-research.txt")
+bt = open(bpath, encoding="utf-8").read() if os.path.exists(bpath) else ""
+check("block 0x%X type 0xB0057E50 payload 1024 hits 3" % (GAME_BASE + BLK) in bt, "the scan finds the unknown LDLD block that holds booster titles")
+check("hit +0x0000 Dead Sprint" in bt and "hit +0x0040 Stun Pods" in bt and "hit +0x0080 Armed Resupply Pods" in bt,
+      "... and says which title sits at which offset (stride 0x40)")
+check("%08X" % by_name["Stun Pods"] in bt and "0000000B" in bt, "... with the words around each hit in hex")
+g4.key(0x73)
+g4.tick(600)
+bt = open(bpath, encoding="utf-8").read()
+check("## whole-memory scan 1" in bt and "cluster at 0x31000200, " in bt and "3 distinct title(s)" in bt,
+      "F4: titles close together in plain memory are reported as a cluster")
+check("hit 0x31000260 Muscle Enhancement" in bt, "... with each hit's address and title")
+check(os.path.exists(bpath) and "0x12345678" not in bt and "12345678" not in bt, "words far from any hit are not dumped")
 
 if failed:
     print("\n%d FAILED" % len(failed))

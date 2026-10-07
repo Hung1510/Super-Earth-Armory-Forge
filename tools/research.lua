@@ -360,6 +360,187 @@ local function lut_next()
     log('research: colour test: ' .. #target .. ' armor(s) -> ' .. what .. ' (' .. n .. ' pieces, ' .. bad .. ' failed)')
 end
 
+-- ================================================================ test C: where are the boosters?
+-- The game's booster definitions are not in FileDiver's data, so look for them in memory.
+-- Anchors: the string ids of the booster titles (MOD.research.booster_ids, from the game's
+-- own text: "Dead Sprint", "Stun Pods", ...). A table that lists boosters holds those ids
+-- (or the same boosters in enum order) next to each booster's numbers.
+--  * automatic: every LDLD block the normal scan meets is searched for the ids
+--  * F4: the whole of memory is searched; hits close together are dumped as clusters
+-- Results: ArmoryForge\boosters-research.txt (u32 words, hex). Nothing is changed in memory.
+local BS = { ids = {}, bm = ffi_.new('uint8_t[65536]'), seen = {}, blocks = {}, nblocks = 0,
+             mem = nil, busy = false, scans = 0, dirty = false, bytes_left = 96 * 1048576 }
+R.boosters = BS
+for id, name in pairs(MOD.research and MOD.research.booster_ids or {}) do
+    BS.ids[id] = name
+    BS.bm[id % 65536] = 1
+end
+
+local function words(addr_or_blob, from, to, label)
+    -- from/to: byte offsets; blob is a Lua string. Returns text lines, 8 words per line.
+    local blob = addr_or_blob
+    local out, row, start = {}, {}, from
+    for o = from, to - 4, 4 do
+        row[#row + 1] = string.format('%08X', u32(blob, o))
+        if #row == 8 or o + 4 >= to then
+            out[#out + 1] = string.format('    %s+0x%04X: %s', label or '', start - from, table.concat(row, ' '))
+            row, start = {}, o + 4
+        end
+    end
+    return out
+end
+
+local function bs_block(address, kind, payload)
+    if BS.seen[address] or kind == MOD.type_kit or payload > 262144 or payload < 32 then return end
+    BS.seen[address] = true
+    if BS.bytes_left < payload or BS.nblocks >= 60 then return end
+    local blob = api.read(address + 24, payload)
+    if not blob or #blob < 32 then return end
+    BS.bytes_left = BS.bytes_left - #blob
+    local p32 = ffi_.cast('const uint32_t *', blob)
+    local hits = {}
+    for i = 0, math.floor(#blob / 4) - 1 do
+        local v = p32[i]
+        if BS.bm[v % 65536] ~= 0 and BS.ids[v] then hits[#hits + 1] = { off = i * 4, name = BS.ids[v] } end
+    end
+    if #hits == 0 then return end
+    local b = { address = address, kind = kind, payload = #blob, hits = hits, lines = {} }
+    for h = 1, math.min(#hits, 12) do
+        local from = math.max(0, hits[h].off - 64)
+        local to = math.min(#blob - #blob % 4, hits[h].off + 256)
+        b.lines[#b.lines + 1] = string.format('  window around hit %d (%s at +0x%X):', h, hits[h].name, hits[h].off)
+        for _, l in ipairs(words(blob:sub(from + 1, to), 0, to - from, 'payload+' .. string.format('0x%X', from) .. ' ')) do
+            b.lines[#b.lines + 1] = l
+        end
+    end
+    BS.nblocks = BS.nblocks + 1
+    BS.blocks[#BS.blocks + 1] = b
+    BS.dirty = true
+    log(string.format('research: boosters: block 0x%X type 0x%08X (%d bytes) holds %d booster title id(s)', address, kind, #blob, #hits))
+end
+
+local block_before = R.block
+function R.block(address, kind, payload)
+    block_before(address, kind, payload)
+    pcall(bs_block, address, kind, payload)
+end
+
+local function bs_write()
+    local L = {
+        '# Armory Forge research: where are the booster definitions in memory?',
+        '# Send this file to the mod author. Nothing here is personal.',
+        'mod ' .. MOD.version .. ' research',
+        'written ' .. os.date('!%Y-%m-%dT%H:%M:%SZ'),
+        'anchors ' .. (function() local n = 0 for _ in pairs(BS.ids) do n = n + 1 end return n end)() .. ' string ids',
+        '',
+        '## LDLD blocks that hold booster title ids: ' .. #BS.blocks,
+    }
+    for _, b in ipairs(BS.blocks) do
+        L[#L + 1] = string.format('block 0x%X type 0x%08X payload %d hits %d', b.address, b.kind, b.payload, #b.hits)
+        for i, h in ipairs(b.hits) do
+            if i > 60 then L[#L + 1] = '  ...'; break end
+            L[#L + 1] = string.format('  hit +0x%04X %s', h.off, h.name)
+        end
+        for _, l in ipairs(b.lines) do L[#L + 1] = l end
+    end
+    if BS.mem then
+        L[#L + 1] = ''
+        L[#L + 1] = string.format('## whole-memory scan %d: %d hit(s), %d cluster(s) (%.0f MB, %.0f s)', BS.scans, BS.mem.nhits,
+            #BS.mem.clusters, BS.mem.bytes / 1048576, BS.mem.secs)
+        for _, c in ipairs(BS.mem.clusters) do
+            L[#L + 1] = string.format('cluster at 0x%X, %d bytes, %d distinct title(s)', c.lo, c.len, c.distinct)
+            for _, h in ipairs(c.hits) do L[#L + 1] = string.format('  hit 0x%X %s', h[1], h[2]) end
+            for _, l in ipairs(c.lines) do L[#L + 1] = l end
+        end
+    end
+    write_file(forge_file('boosters-research.txt'), table.concat(L, '\r\n') .. '\r\n')
+    BS.dirty = false
+end
+
+local finish_before = R.finish
+function R.finish()
+    finish_before()
+    if BS.dirty then pcall(bs_write) end
+end
+
+local function bs_chunk(base, size)
+    local p = api.read_into(base, size)
+    if not p then return end
+    local p32 = ffi_.cast('uint32_t *', p)
+    local bm, ids, M = BS.bm, BS.ids, BS.mem
+    for i = 0, math.floor(size / 4) - 1 do
+        local v = p32[i]
+        if bm[v % 65536] ~= 0 and ids[v] and M.nhits < 4000 then
+            M.nhits = M.nhits + 1
+            M.hits[M.nhits] = { base + i * 4, ids[v] }
+        end
+    end
+end
+
+local function bs_clusters(M)
+    -- hits within 4 KB of each other, three or more different titles
+    local hs = M.hits
+    table.sort(hs, function(a, b) return a[1] < b[1] end)
+    local i = 1
+    while i <= #hs and #M.clusters < 8 do
+        local j, names, n = i, {}, 0
+        while j <= #hs and hs[j][1] - hs[i][1] <= 4096 do
+            if not names[hs[j][2]] then names[hs[j][2]] = true; n = n + 1 end
+            j = j + 1
+        end
+        if n >= 3 then
+            local lo, hi = hs[i][1], hs[j - 1][1]
+            local from = lo - 64
+            local len = math.min(hi - lo + 64 + 192, 2048)
+            len = len - len % 4
+            local c = { lo = lo, len = len, distinct = n, hits = {}, lines = {} }
+            for k = i, j - 1 do c.hits[#c.hits + 1] = hs[k] end
+            local blob = api.read(from, len)
+            if blob and #blob >= 8 then
+                c.lines = words(blob, 0, #blob - #blob % 4, 'from ' .. string.format('0x%X', from) .. ' ')
+            end
+            M.clusters[#M.clusters + 1] = c
+            i = j
+        else
+            i = i + 1
+        end
+    end
+end
+
+local function bs_start(now)
+    if BS.busy then return end
+    BS.mem = { hits = {}, nhits = 0, clusters = {}, bytes = 0, secs = 0 }
+    BS.regions, BS.idx, BS.cursor, BS.busy, BS.t0 = api.regions(), 1, 0, true, now
+    state.research_note = 'Booster scan started (about a minute; keep the game open)'
+    log('research: booster memory scan started')
+end
+
+local function bs_step(now)
+    local deadline = api.now() + 0.004
+    while BS.busy do
+        local r = BS.regions[BS.idx]
+        if not r then
+            BS.busy = false
+            BS.scans = BS.scans + 1
+            BS.mem.secs = now - BS.t0
+            bs_clusters(BS.mem)
+            pcall(bs_write)
+            state.research_note = string.format('Booster scan done: %d hit(s), %d cluster(s)', BS.mem.nhits, #BS.mem.clusters)
+            log('research: booster scan done, ' .. BS.mem.nhits .. ' hit(s), ' .. #BS.mem.clusters .. ' cluster(s)')
+            return
+        end
+        if BS.cursor >= r.size then
+            BS.idx, BS.cursor = BS.idx + 1, 0
+        else
+            local take = math.min(1048576, r.size - BS.cursor)
+            pcall(bs_chunk, r.base + BS.cursor, take)
+            BS.mem.bytes = BS.mem.bytes + take
+            BS.cursor = BS.cursor + take
+        end
+        if api.now() >= deadline then return end
+    end
+end
+
 -- ================================================================ keys
 pcall(ffi_.cdef, 'int16_t GetAsyncKeyState(int key);')
 local okuser, user = pcall(ffi_.load, 'user32')
@@ -378,10 +559,15 @@ local function pressed(vk)
 end
 
 function R.tick(now)
+    if pressed(0x73) then pcall(bs_start, now) end              -- F4
     if pressed(0x79) then pcall(ls_start, now) end              -- F10
     if pressed(0x7A) then                                       -- F11
         local ok, why = pcall(lut_next)
         if not ok then log('research: colour test: ' .. tostring(why)) end
+    end
+    if BS.busy then
+        local ok, why = pcall(bs_step, now)
+        if not ok then BS.busy = false; log('research: booster scan failed: ' .. tostring(why)) end
     end
     if LS.busy then
         local ok, why = pcall(ls_step, now)

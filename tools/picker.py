@@ -1126,6 +1126,10 @@ What it does:
 - F10 (wait ~30 s after start): finds where your equipped armor is stored.
   Press F10, change armor in the armory (EQUIP), press F10 again.
   Results: ...\\ArmoryForge\\loadout-research.txt
+- F4 (wait ~30 s after start): booster scan. Looks through memory for the booster
+  titles (Dead Sprint, Stun Pods, ...) and dumps what sits around them.
+  The mod also checks its own tables for them while it starts up.
+  Results: ...\\ArmoryForge\\boosters-research.txt (send it back; changes nothing)
 - F11: colour test. Every %(lut)s armor takes the next armor's colours
   (press again for the next one; after the last, its own colours).
 Everything else works as usual (F7 panel, your loadouts).
@@ -1143,8 +1147,11 @@ def research_lua(settings, weight, lut_passive=16):
     with open(os.path.join(HERE, "panel.lua"), encoding="utf-8") as f:
         panel = f.read()
     assert full.count(panel) == 1 and full.count("    blank = true,") == 1
-    flag = "    research = { weight = %s, lut_passive = %d },   -- research build: see tools/research.lua\n" % (
-        "nil" if weight is None else weight, lut_passive)
+    with open(os.path.join(HERE, "booster-anchors.json"), encoding="utf-8") as f:
+        anchors = json.load(f)
+    ids = ", ".join("[%s]=%s" % (k, json.dumps(v)) for k, v in sorted(anchors.items(), key=lambda kv: int(kv[0])))
+    flag = "    research = { weight = %s, lut_passive = %d, booster_ids = { %s } },   -- research build: see tools/research.lua\n" % (
+        "nil" if weight is None else weight, lut_passive, ids)
     full = full.replace("    blank = true,", flag + "    blank = true,", 1)
     return full.replace(panel, research + "\n" + panel, 1)
 
