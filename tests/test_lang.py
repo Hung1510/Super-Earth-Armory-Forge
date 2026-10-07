@@ -99,14 +99,14 @@ check("[profile: Med-Kit]" in saved and "Servo-Assisted" in saved and not re.sea
       "loadout.ini stays English")
 s, p = picker.load_config_text(saved)
 check(any(x["perk"] == pid("Med-Kit") for x in p), "... and loads anywhere (English panel, web builder)")
-check(b"Chinese can be drawn" in (g.state[b"pp"][b"font_result"] or b""), "the font test finds the Chinese characters")
+check(b"can be drawn" in (g.state[b"pp"][b"font_result"] or b""), "the font test finds the Chinese characters")
 
 # ------------------------------------------------------------------ 3. the game font
 gn, _ = session(build(SINK), missing="all")
 t = joined(gn)
 check("ARMORY" in t and "军械" not in t, "a font without Chinese: the panel stays English")
 gn.click("settings")
-check(any("set the game's text language to Chinese" in x for x in gn.texts()), "... and the Keys tab says why")
+check(any("set the game's text language to match" in x for x in gn.texts()), "... and the Keys tab says why")
 gp, _ = session(build(SINK), missing={"，", "。"})
 t = joined(gp)
 check("军械" in t and "，" not in t and "。" not in t, "punctuation the font lacks gets an ASCII stand-in, the rest is Chinese")

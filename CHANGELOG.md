@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.4 (2026-10-07)
+Both editions (full and Passive Swap):
+- **日本語:** the in-game panel and the web builder in Japanese. Keys tab → *Language / 语言* → 日本語. Passive and armor names (222 armors, 32 passives) are the game's own Japanese names, read from the game's text; the rest is translated for the panel, and uses the game's wording (ダメージ耐性, アーマー評価, 回復薬). Set the game's text language to Japanese so its font has the characters; if it can't draw them the panel stays English and the Keys tab says so.
+- Web builder: English / 简体中文 / 日本語 at the top right (or `?lang=ja`; Japanese browsers get it by default).
+- Your `loadout.ini`, share codes and the problem report stay English, so loadouts move between languages unchanged.
+
 ## 6.3 (2026-10-07)
 Both editions (full and Passive Swap):
 - **Much lighter on the game:** the mod no longer scans the game's memory for what you're wearing over and over (it did that in the background, a few milliseconds every frame, and started again after every mission load). The first search costs a third of what it did; after that the mod only looks again near where it found your armor, a few times at most, and only while the panel is open. The controller check that stalled a frame about once a second without a controller now runs every three seconds, and the 5-second re-check (*retire = false*) reads one block per passive instead of rebuilding every row. Thanks MuddyMo, yixia and AKmods934 for the reports and the lag-watchdog numbers.

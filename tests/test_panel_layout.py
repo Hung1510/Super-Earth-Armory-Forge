@@ -102,7 +102,11 @@ CONFIGS = [("measured", (1920, 1080), 1.0), ("estimated", (1920, 1080), 1.0),
 # the same in Chinese (6.2): longer words, other line breaks
 CONFIGS = [c + ("en",) for c in CONFIGS] + [
     ("measured", (1920, 1080), 1.0, "zh"), ("measured", (1280, 720), 1.0, "zh"),
-    ("estimated", (1920, 1080), 1.0, "zh"), ("measured", (3840, 2160), 1.5, "zh")]
+    ("estimated", (1920, 1080), 1.0, "zh"), ("measured", (3840, 2160), 1.5, "zh"),
+    # and in Japanese (6.4): the longest strings of the three
+    ("measured", (1920, 1080), 1.0, "ja"), ("measured", (1280, 720), 1.0, "ja"),
+    ("estimated", (1920, 1080), 1.0, "ja"), ("measured", (3840, 2160), 1.5, "ja"),
+    ("measured", (1920, 1080), 0.8, "ja")]
 
 
 def appdata_for(lang):

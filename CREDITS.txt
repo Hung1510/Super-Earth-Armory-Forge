@@ -18,6 +18,9 @@ Armor weight ....... the armor kit record layout comes from FileDiver by xypwn
 简体中文 ........... the Simplified Chinese panel (tools/lang_zh.lua) is hd2modpj's
                      translation from their "Super Earth Armory Forge 简体中文" addon,
                      with the game's official Chinese passive and armor names
+日本語 ............. the Japanese panel (tools/lang_ja.lua) uses the game's own Japanese
+                     passive and armor names (read from a game install with FileDiver,
+                     tools/armor-names/); the rest was translated for the panel
 Web builder ........ uses JSZip (MIT) - docs/vendor/
 Mascot ............. the idea and behaviour (eyes follow the cursor, boop, dizzy) are from
                      page-mascot by Kamran Ahmed (MIT) https://github.com/nilbuild/page-mascot

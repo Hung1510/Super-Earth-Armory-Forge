@@ -1,0 +1,293 @@
+{
+ "about": "Armor passive names and descriptions in the game's own languages, from FileDiver's armor dump (tools/armor_names.py --lang).",
+ "passives": {
+  "ACCLIMATED": {
+   "en": {
+    "desc": "Provides <c=#COLOR>50%</c> resistance to fire, gas, acid, and electrical damage."
+   },
+   "ja": {
+    "name": "順応",
+    "desc": "炎、ガス、酸、電気のダメージに対する耐性が<c=#COLOR>50%</c>増加する。"
+   }
+  },
+  "ADRENO-DEFIBRILLATOR": {
+   "en": {
+    "desc": "Provides one-time, short-lived resuscitation upon death, given that the Helldiver's body is still intact. Increases stim effect duration by <c=#COLOR>2.0 seconds</c>. Provides <c=#COLOR>50%</c> resistance to arc damage."
+   },
+   "ja": {
+    "name": "アドレナリン除細動器",
+    "desc": "ヘルダイバーの身体が損傷していない場合、死亡時に一度だけ短時間復活する。 回復薬の効果時間を<c=#COLOR>2.0 seconds</c>増やす。 <c=#COLOR>50%</c>の放電ダメージ耐性を得る。"
+   }
+  },
+  "ADVANCED FILTRATION": {
+   "en": {
+    "desc": "Provides <c=#COLOR>80%</c> resistance to gas damage and effects."
+   },
+   "ja": {
+    "name": "高機能ろ過",
+    "desc": "<c=#COLOR>80%</c>のガスダメージ抵抗および効果ボーナスを得る。"
+   }
+  },
+  "BALLISTIC PADDING": {
+   "en": {
+    "desc": "Provides <c=#COLOR>25%</c> resistance to chest damage. Provides <c=#COLOR>25%</c> resistance to explosive damage. Prevents <c=#COLOR>all damage from bleeding</c> if chest hemorrhages."
+   },
+   "ja": {
+    "name": "バリスティックパッド",
+    "desc": "胸部へのダメージ耐性が<c=#COLOR>25%</c>増加する。 <c=#COLOR>25%</c>の爆発ダメージ耐性を得る。 胸部から出血した場合<c=#COLOR>出血によるあらゆるダメージ</c>を防ぐ。"
+   }
+  },
+  "BLUNT-FORCE MITIGATION": {
+   "en": {
+    "desc": "Bearer is more resistant to being knocked prone. Reduces damage taken from impact and collisions by <c=#COLOR>30%</c>. Provides a <c=#COLOR>higher armor rating</c>."
+   },
+   "ja": {
+    "name": "鈍的ダメージ緩和",
+    "desc": "うつぶせに倒されにくくなる。 衝撃や衝突によるダメージを<c=#COLOR>30%</c>軽減する。 <c=#COLOR>アーマー評価</c>を高める。"
+   }
+  },
+  "CONCUSSIVE PADDING, GRENADIER": {
+   "en": {
+    "desc": "Provides <c=#COLOR>50%</c> resistance to explosive damage. Increases initial inventory and holding capacity of throwables by <c=#COLOR>2</c>."
+   },
+   "ja": {
+    "name": "耐衝撃パッド（グレネード）",
+    "desc": "<c=#COLOR>50%</c>の爆発ダメージ耐性を得る。 グレネードの在庫数と所持数を<c=#COLOR>2</c>増やす。"
+   }
+  },
+  "CONCUSSIVE PADDING, HAZMAT": {
+   "en": {
+    "desc": "Provides <c=#COLOR>50%</c> resistance to explosive damage. Provides <c=#COLOR>25%</c> resistance to gas damage and effects. Sidearm recoil reduced by <c=#COLOR>30%</c>."
+   },
+   "ja": {
+    "name": "耐衝撃パッド（有害物質）",
+    "desc": "<c=#COLOR>50%</c>の爆発ダメージ耐性を得る。 <c=#COLOR>25%</c>のガスダメージ抵抗および効果ボーナスを得る。 ハンドガンの反動が<c=#COLOR>30%</c>減少する。"
+   }
+  },
+  "CONCUSSIVE PADDING, REINFORCED": {
+   "en": {
+    "desc": "Provides <c=#COLOR>50%</c> resistance to explosive damage. Provides a <c=#COLOR>higher armor rating</c>."
+   },
+   "ja": {
+    "name": "耐衝撃パッド（強化）",
+    "desc": "<c=#COLOR>50%</c>の爆発ダメージ耐性を得る。 <c=#COLOR>アーマー評価</c>を高める。"
+   }
+  },
+  "DEMOCRACY PROTECTS": {
+   "en": {
+    "desc": "<c=#COLOR>50%</c> chance to not die when taking lethal damage. Prevents <c=#COLOR>all damage from bleeding</c> if chest hemorrhages."
+   },
+   "ja": {
+    "name": "民主主義の加護",
+    "desc": "<c=#COLOR>50%</c>の確率で致命傷を負っても死なずに済む。 胸部から出血した場合<c=#COLOR>出血によるあらゆるダメージ</c>を防ぐ。"
+   }
+  },
+  "DESERT STORMER": {
+   "en": {
+    "desc": "Provides <c=#COLOR>40%</c> resistance to fire, gas, acid, and electrical damage. Increases throwing range by <c=#COLOR>20%</c>."
+   },
+   "ja": {
+    "name": "デザートストーマー",
+    "desc": "炎、ガス、酸、電気のダメージに対する耐性が<c=#COLOR>40%</c>増加する。 投擲距離を<c=#COLOR>20%</c>伸ばす。"
+   }
+  },
+  "ELECTRICAL CONDUIT": {
+   "en": {
+    "desc": "Provides <c=#COLOR>95%</c> resistance to arc damage."
+   },
+   "ja": {
+    "name": "導電管",
+    "desc": "<c=#COLOR>95%</c>の放電ダメージ耐性を得る。"
+   }
+  },
+  "ENGINEERING KIT": {
+   "en": {
+    "desc": "Further reduces recoil when crouching or prone by <c=#COLOR>30%</c>. Increases initial inventory and holding capacity of throwables by <c=#COLOR>2</c>."
+   },
+   "ja": {
+    "name": "工作キット",
+    "desc": "しゃがみ姿勢やうつ伏せ時の反動をさらに<c=#COLOR>30%</c>軽減。 グレネードの在庫数と所持数を<c=#COLOR>2</c>増やす。"
+   }
+  },
+  "EXTRA PADDING": {
+   "en": {
+    "desc": "Provides a <c=#COLOR>higher armor rating</c>."
+   },
+   "ja": {
+    "name": "追加パッド",
+    "desc": "<c=#COLOR>アーマー評価</c>を高める。"
+   }
+  },
+  "FEET FIRST": {
+   "en": {
+    "desc": "Wearer makes <c=#COLOR>50%</c> less noise when moving. Increases point-of-interest identification range by <c=#COLOR>30%</c>. Provides immunity to leg injuries."
+   },
+   "ja": {
+    "name": "フィートファースト",
+    "desc": "移動音が<c=#COLOR>50%</c>減少する。 地点識別範囲が<c=#COLOR>30%</c>増加する。 脚部の負傷に対する耐性を得る。"
+   }
+  },
+  "FORTIFIED": {
+   "en": {
+    "desc": "Further reduces recoil when crouching or prone by <c=#COLOR>30%</c>. Provides <c=#COLOR>50%</c> resistance to explosive damage."
+   },
+   "ja": {
+    "name": "装甲強化",
+    "desc": "しゃがみ姿勢やうつ伏せ時の反動をさらに<c=#COLOR>30%</c>軽減。 <c=#COLOR>50%</c>の爆発ダメージ耐性を得る。"
+   }
+  },
+  "GUNSLINGER": {
+   "en": {
+    "desc": "Increases sidearms reload speed by <c=#COLOR>40%</c>. Sidearm draw/holster speed increased by <c=#COLOR>50%</c>. Sidearm recoil reduced by <c=#COLOR>70%</c>."
+   },
+   "ja": {
+    "name": "ガンスリンガー",
+    "desc": "ハンドガンのリロード速度が<c=#COLOR>40%</c>上昇する。 ハンドガンの切り替え速度が<c=#COLOR>50%</c>上昇する。 ハンドガンの反動が<c=#COLOR>70%</c>減少する。"
+   }
+  },
+  "INFLAMMABLE": {
+   "en": {
+    "desc": "Provides <c=#COLOR>75%</c> damage resistance to fire, allowing bearer to rest assured in their inflammability."
+   },
+   "ja": {
+    "name": "耐熱性",
+    "desc": "炎へのダメージ耐性が<c=#COLOR>75%</c>増加し、装備した者は安心して耐熱性の恩恵を受け取れる。"
+   }
+  },
+  "INTEGRATED EXPLOSIVES": {
+   "en": {
+    "desc": "Armor explodes <c=#COLOR>1.5 seconds</c> after the wearer dies. Increases initial inventory and holding capacity of throwables by <c=#COLOR>2</c>."
+   },
+   "ja": {
+    "name": "内蔵式爆薬",
+    "desc": "着用者が死亡してから<c=#COLOR>1.5 seconds</c>後にアーマーが爆発する。 グレネードの在庫数と所持数を<c=#COLOR>2</c>増やす。"
+   }
+  },
+  "KINETIC DISPLACEMENT MITIGATION": {
+   "en": {
+    "desc": "Provides <c=#COLOR>50%</c> damage resistance to fire, allowing bearer to rest assured in their inflammability. Gives wearer a <c=#COLOR>50%</c> chance to avoid grievous limb injury. Reduces damage taken from impact and collisions by <c=#COLOR>30%</c>."
+   },
+   "ja": {
+    "name": "移動によるズレ軽減",
+    "desc": "炎へのダメージ耐性が<c=#COLOR>50%</c>増加し、装備した者は安心して耐熱性の恩恵を受け取れる。 着用者は四肢の重傷を回避する確率が<c=#COLOR>50%</c>増加する。 衝撃や衝突によるダメージを<c=#COLOR>30%</c>軽減する。"
+   }
+  },
+  "MED-KIT": {
+   "en": {
+    "desc": "Increases initial inventory and holding capacity of stims by <c=#COLOR>+2</c>. Increases stim effect duration by <c=#COLOR>2.0 seconds</c>."
+   },
+   "ja": {
+    "name": "医療キット",
+    "desc": "回復薬の在庫数と所持数を<c=#COLOR>+2</c>増やす。 回復薬の効果時間を<c=#COLOR>2.0 seconds</c>増やす。"
+   }
+  },
+  "OXYGENATOR": {
+   "en": {
+    "desc": "Increases the wearer's walking and running speed. Increases the speed and duration of slides."
+   },
+   "ja": {
+    "name": "酸素供給器",
+    "desc": "歩行時およびダッシュ時の速度が上昇する。 スライディングの速度が上昇し時間が長くなる。"
+   }
+  },
+  "PEAK PHYSIQUE": {
+   "en": {
+    "desc": "Increases melee damage by <c=#COLOR>40%</c>. Increases weapon ergonomics to reduce drag on weapon movement."
+   },
+   "ja": {
+    "name": "ピークフィジーク",
+    "desc": "近接攻撃ダメージが<c=#COLOR>40%</c>増加する。 武器のエルゴノミクスが向上し、取り回し時の空気抵抗が軽減される。"
+   }
+  },
+  "REDUCED SIGNATURE": {
+   "en": {
+    "desc": "Wearer makes <c=#COLOR>50%</c> less noise when moving. Reduces range at which enemies can detect the wearer by <c=#COLOR>40%</c>."
+   },
+   "ja": {
+    "name": "探知抑制",
+    "desc": "移動音が<c=#COLOR>50%</c>減少する。 敵が着用者を検知できる範囲を<c=#COLOR>40%</c>減少させる。"
+   }
+  },
+  "REINFORCED EPAULETTES": {
+   "en": {
+    "desc": "Increases reload speed of primary weapons by <c=#COLOR>30%</c>. Gives wearer a <c=#COLOR>50%</c> chance to avoid grievous limb injury. Increases melee damage by <c=#COLOR>20%</c>."
+   },
+   "ja": {
+    "name": "強化肩章",
+    "desc": "メインウェポンのリロード速度が<c=#COLOR>30%</c>上昇する。 着用者は四肢の重傷を回避する確率が<c=#COLOR>50%</c>増加する。 近接攻撃ダメージが<c=#COLOR>20%</c>増加する。"
+   }
+  },
+  "ROCK-SOLID": {
+   "en": {
+    "desc": "Increases melee damage by <c=#COLOR>40%</c>. Bearer is more resistant to being knocked prone."
+   },
+   "ja": {
+    "name": "頑丈",
+    "desc": "近接攻撃ダメージが<c=#COLOR>40%</c>増加する。 うつぶせに倒されにくくなる。"
+   }
+  },
+  "SCOUT": {
+   "en": {
+    "desc": "Markers placed on the map will generate radar scans every <c=#COLOR>2.0 seconds</c>. Reduces range at which enemies can detect the wearer by <c=#COLOR>30%</c>."
+   },
+   "ja": {
+    "name": "偵察",
+    "desc": "マップに設置されたマーカーが<c=#COLOR>2.0 seconds</c>毎にレーダースキャンを実行。 敵が着用者を検知できる範囲を<c=#COLOR>30%</c>減少させる。"
+   }
+  },
+  "SERVO-ASSISTED": {
+   "en": {
+    "desc": "Increases throwing range by <c=#COLOR>30%</c>. Provides <c=#COLOR>+50%</c> limb health."
+   },
+   "ja": {
+    "name": "サーボアシスト付",
+    "desc": "投擲距離を<c=#COLOR>30%</c>伸ばす。 四肢の状態に<c=#COLOR>+50%</c>を得る。"
+   }
+  },
+  "SIEGE-READY": {
+   "en": {
+    "desc": "Increases reload speed of primary weapons by <c=#COLOR>30%</c>. Increases ammo capacity of all weapons by <c=#COLOR>20%</c>. Does not affect weapon backpacks."
+   },
+   "ja": {
+    "name": "包囲準備完了",
+    "desc": "メインウェポンのリロード速度が<c=#COLOR>30%</c>上昇する。 全武器の弾薬容量が<c=#COLOR>20%</c>増加する。武器バックパックには影響しない。"
+   }
+  },
+  "STANDARD ISSUE": {
+   "en": {
+    "desc": "No additional bonuses."
+   },
+   "ja": {
+    "name": "標準装備",
+    "desc": "追加ボーナスなし。"
+   }
+  },
+  "SUPPLEMENTAL ADRENALINE": {
+   "en": {
+    "desc": "When the wearer takes damage, they regain some stamina. Provides a <c=#COLOR>higher armor rating</c>."
+   },
+   "ja": {
+    "name": "アドレナリンサプリメント",
+    "desc": "ダメージを受けるとスタミナが一定量回復する。 <c=#COLOR>アーマー評価</c>を高める。"
+   }
+  },
+  "TRUE GRIT": {
+   "en": {
+    "desc": "Increases reload speed of support weapons by <c=#COLOR>30%</c>. Slightly increases weapon ergonomics to reduce drag on weapon movement."
+   },
+   "ja": {
+    "name": "真の根性",
+    "desc": "支援武器のリロード速度が<c=#COLOR>30%</c>上昇する。 武器のエルゴノミクスがわずかに向上し、取り回し時の空気抵抗が軽減される。"
+   }
+  },
+  "UNFLINCHING": {
+   "en": {
+    "desc": "Helps prevent Helldivers from flinching when hit. Provides a <c=#COLOR>higher armor rating</c>. Markers placed on the map will generate radar scans every <c=#COLOR>2.0 seconds</c>."
+   },
+   "ja": {
+    "name": "不動",
+    "desc": "攻撃を受けてもヘルダイバーがひるまない。 <c=#COLOR>アーマー評価</c>を高める。 マップに設置されたマーカーが<c=#COLOR>2.0 seconds</c>毎にレーダースキャンを実行。"
+   }
+  }
+ }
+}

@@ -1,8 +1,9 @@
-/* Super Earth Armory Forge web builder - the page in Simplified Chinese (简体中文).
+/* Super Earth Armory Forge web builder - the page in Simplified Chinese (简体中文) and Japanese
+   (日本語, the wording is in i18n-ja.js).
    Like the in-game panel, the page is written in English and translated where it's shown:
    every text node and title / placeholder is looked up when it appears (a MutationObserver),
    so app.js needs no changes for new text. Names (passives, effects, armors, presets) come
-   from tools/lang_zh.lua via data.json (hd2modpj's translation, the game's own names); the
+   from tools/lang_zh.lua and tools/lang_ja.lua via data.json (the game's own names); the
    page's own wording is below. The loadout.ini view, share links and downloads stay English. */
 (function () {
   "use strict";
@@ -232,7 +233,15 @@
     [/^placeholder row - revive is probably tied to perk id$/, "占位行：复活大概与被动 id 绑定"],
     [/^slide-related \?$/, "滑铲相关？"], [/^(.+)% resist$/, "$1% 抗性"],
   ];
+  // each language: the page's wording, sentence rules, effect hints, and the marks it joins with
+  const PACKS = {
+    zh: { PAGE, RULES, WORD, KIND, HINT, semi: "；", comma: "、", dflt: " · 默认 ", q: "？", stop: /[。！？]$/, html: "zh-Hans" },
+  };
+  if (window.PPI18N_JA) PACKS.ja = window.PPI18N_JA;
+  let pack = PACKS.zh;
+
   function hint(s) {
+    const { KIND, HINT } = pack;
     const m = s.match(/^(add|mul|set|stat|time)(?:; (.+))?$/);
     if (!m) return null;
     let rest = m[2] || "";
@@ -240,28 +249,40 @@
     const head = eq ? eq[1] : "", body = eq ? eq[2] : rest;
     let t = body;
     for (const [re, rep] of HINT) if (re.test(body)) { t = body.replace(re, rep); break; }
-    return KIND[m[1]] + (rest ? "；" + head + t + (eq && eq[3] ? "？" : "") : "");
+    return KIND[m[1]] + (rest ? pack.semi + head + t + (eq && eq[3] ? pack.q : "") : "");
   }
 
-  let names = null;            // english (lower case) -> chinese, from data.json
+  let names = null;            // english (lower case) -> the language's text, from data.json
+  const NAMES = {};
   function index(data) {
-    names = {};
-    const g = (data && data.lang && data.lang.zh) || {};
-    for (const group of ["perk", "effect", "unit", "preset", "desc", "armor", "ui"])
-      for (const [k, v] of Object.entries(g[group] || {})) names[k.toLowerCase()] = v;
-    for (const [k, v] of Object.entries(PAGE)) names[k.toLowerCase()] = v;
+    for (const code of Object.keys(PACKS)) {
+      const n = {};
+      const g = (data && data.lang && data.lang[code]) || {};
+      for (const group of ["perk", "effect", "unit", "preset", "desc", "armor", "ui"])
+        for (const [k, v] of Object.entries(g[group] || {})) n[k.toLowerCase()] = v;
+      for (const [k, v] of Object.entries(PACKS[code].PAGE)) n[k.toLowerCase()] = v;
+      NAMES[code] = n;
+    }
+    use("zh");
+  }
+  function use(code) {         // the language tr() translates into
+    if (!PACKS[code]) return false;
+    pack = PACKS[code];
+    names = NAMES[code] || null;
+    return true;
   }
 
   function tr(s) {
     if (!names || !s || !/[A-Za-z]/.test(s)) return s;
     const hit = names[s.toLowerCase()];
     if (hit) return hit;
+    const WORD = pack.WORD, RULES = pack.RULES;
     if (WORD[s.toLowerCase()]) return WORD[s.toLowerCase()];
     const dflt = s.match(/^(.*) · default (.+)$/);
-    if (dflt) return tr(dflt[1]) + " · 默认 " + dflt[2];
+    if (dflt) return tr(dflt[1]) + pack.dflt + dflt[2];
     if (s.includes(", ")) {                     // "radar ping, detection radius"
       const parts = s.split(", ").map((p) => names[p.toLowerCase()] || WORD[p.toLowerCase()]);
-      if (parts.every(Boolean)) return parts.join("、");
+      if (parts.every(Boolean)) return parts.join(pack.comma);
     }
     const h = hint(s);
     if (h) return h;
@@ -275,7 +296,7 @@
     if (parts && parts.length > 1 && parts.join("") === s) {
       const out = parts.map((p) => tr(p.trim()));
       if (out.some((o, i) => o !== parts[i].trim()))
-        return out.reduce((a, o) => a + (a && !/[。！？]$/.test(a) ? " " : "") + o, "");
+        return out.reduce((a, o) => a + (a && !pack.stop.test(a) ? " " : "") + o, "");
     }
     return s;
   }
@@ -293,7 +314,7 @@
       const en = node.__en;
       if (en === undefined) return;
       let out = en;
-      if (lang === "zh") {
+      if (lang !== "en") {
         const m = en.match(/^(\s*)([\s\S]*?)(\s*)$/);
         const t = tr(m[2].replace(/\s+/g, " "));
         out = t === m[2].replace(/\s+/g, " ") ? en : m[1] + t + m[3];
@@ -308,7 +329,7 @@
       const key = "__en_" + a, mark = "__zh_" + a;
       const v = node.getAttribute(a);
       if (node[mark] !== v) node[key] = v;
-      const out = lang === "zh" ? tr(node[key]) : node[key];
+      const out = lang !== "en" ? tr(node[key]) : node[key];
       node[mark] = out;
       if (v !== out) node.setAttribute(a, out);
     }
@@ -322,11 +343,12 @@
   }
 
   function set(l) {
-    lang = l === "zh" ? "zh" : "en";
+    lang = PACKS[l] && use(l) ? l : "en";
     try { localStorage.setItem("af-lang", lang); } catch (e) { /* private mode */ }
-    document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
-    const b = document.getElementById("langBtn");
-    if (b) b.textContent = lang === "zh" ? "English" : "简体中文";
+    document.documentElement.lang = lang === "en" ? "en" : PACKS[lang].html;
+    for (const b of document.querySelectorAll("[data-lang]")) {
+      if (b.dataset.lang === lang) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    }
     run();
   }
 
@@ -335,7 +357,8 @@
     let saved = null;
     try { saved = localStorage.getItem("af-lang"); } catch (e) { /* private mode */ }
     const q = new URLSearchParams(location.search).get("lang");
-    const pick = q || saved || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en");
+    const nav = (navigator.language || "").toLowerCase();
+    const pick = q || saved || (nav.startsWith("zh") ? "zh" : nav.startsWith("ja") ? "ja" : "en");
     new MutationObserver((list) => {
       if (busy || lang === "en") return;
       busy = true;
@@ -347,11 +370,11 @@
         }
       } finally { busy = false; }
     }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
-    const b = document.getElementById("langBtn");
-    if (b) b.addEventListener("click", (e) => { e.preventDefault(); set(lang === "zh" ? "en" : "zh"); });
+    for (const b of document.querySelectorAll("[data-lang]"))
+      b.addEventListener("click", (e) => { e.preventDefault(); set(b.dataset.lang); });
     set(pick);
   }
 
-  window.PPI18N = { start, tr: (s) => (lang === "zh" ? tr(s) : s), lang: () => lang,
-                    _index: index, _tr: tr };   // tests/test_web_i18n.js
+  window.PPI18N = { start, tr: (s) => (lang !== "en" ? tr(s) : s), lang: () => lang,
+                    _index: index, _tr: tr, _use: use, _langs: () => Object.keys(PACKS) };   // tests/test_web_i18n.js
 })();

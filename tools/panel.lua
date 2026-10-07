@@ -283,9 +283,9 @@ local toast = { text = nil, sub = nil, till = 0, gui = nil, world = nil }
 local PP = { user = nil }
 
 -- ---------------------------------------------------------------- language
--- The panel's text in another language (Keys tab: Language; saved as lang = zh in
+-- The panel's text in another language (Keys tab: Language; saved as lang = zh / ja in
 -- panel-position.txt). Everything is drawn in English by the code below and translated at
--- the moment it's drawn or measured (PP.tr), from LANGS (tools/lang_zh.lua). The data
+-- the moment it's drawn or measured (PP.tr), from LANGS (tools/lang_zh.lua, tools/lang_ja.lua). The data
 -- (loadout.ini, share codes, logs, the problem report) stays English, so loadouts move
 -- between languages unchanged. How the lookup works follows hd2modpj's 简体中文 addon:
 -- whole strings first (any case), then sentences with numbers or names in them, then
@@ -293,7 +293,7 @@ local PP = { user = nil }
 -- character the game's font can't draw stays English rather than show "?".
 PP.lang_cache = {}
 PP.CLOSING = {}
-for _, ch in ipairs({ '，', '。', '、', '：', '；', '！', '？', '）', '」', '』', '”', '》' }) do PP.CLOSING[ch] = true end
+for _, ch in ipairs({ '，', '。', '、', '：', '；', '！', '？', '）', '」', '』', '”', '》', 'ー', 'っ', 'ゃ', 'ゅ', 'ょ', '・' }) do PP.CLOSING[ch] = true end
 function PP.lang_data()
     local code = ui.lang
     if not code or code == 'en' or type(LANGS) ~= 'table' or not LANGS[code] then return nil end
@@ -1902,7 +1902,7 @@ local function draw(width, height)
             lx = lx + button('lang:' .. l[1], l[2], lx, ry + 20, nil, 30, true, (ui.lang or 'en') == l[1]) + 8
         end
         if PP.font_cjk == false and (ui.lang or 'en') ~= 'en' then
-            text("The game's font has no Chinese here: set the game's text language to Chinese.", RX, ry + 56, 11, C.YELLOW, RIW)
+            text("The game's font has no Chinese / Japanese here: set the game's text language to match.", RX, ry + 56, 11, C.YELLOW, RIW)
             ry = ry + 16
         end
         ry = ry + 64
@@ -2416,7 +2416,7 @@ local function click(key)
     elseif kind == 'lang' then
         ui.lang = arg
         pcall(PP.save_pos)
-        say(arg == 'zh' and '界面语言：简体中文' or 'Language: English')
+        say(PP.LANG_SAY[arg] or 'Language: English')
     elseif kind == 'boop' then
         if ui.mascot ~= false then PP.mas_boop(now_s()); PP.mas.dirty = true end
     elseif kind == 'mascot' then
@@ -2642,7 +2642,8 @@ function PP.block_on() return ui.block_input ~= false end
 -- "?" the engine draws for a missing glyph, means it can't be drawn. A few missing marks
 -- (，。：) get ASCII stand-ins; if the characters themselves are missing, the panel stays
 -- English (PP.font_cjk = false) and the Keys tab says why.
-PP.LANGS = { { 'en', 'English' }, { 'zh', '简体中文' } }
+PP.LANGS = { { 'en', 'English' }, { 'zh', '简体中文' }, { 'ja', '日本語' } }
+PP.LANG_SAY = { zh = '界面语言：简体中文', ja = '表示言語：日本語' }
 function PP.font_test(gui, font)
     PP.font_cjk, PP.font_bad, PP.lang_cache = nil, nil, {}
     local te = sr.Gui and rawget(sr.Gui, 'text_extents')
@@ -2678,7 +2679,7 @@ function PP.font_test(gui, font)
     PP.font_cjk = checked == 0 or nbad / checked < 0.5
     PP.font_bad = nbad > 0 and bad or nil
     PP.font_result = string.format('%d characters checked, %d missing: %s', checked, nbad,
-                                   PP.font_cjk and 'Chinese can be drawn' or 'no Chinese in this font')
+                                   PP.font_cjk and 'Chinese / Japanese can be drawn' or 'no Chinese / Japanese in this font')
     log('panel font test: ' .. PP.font_result .. ' (' .. tostring(font.text) .. ')')
 end
 

@@ -29,16 +29,16 @@ import uuid
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "panel.lua", "main.lua")]
+ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua")]
 
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "6.3"
+VERSION = "6.4"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
-RELEASE_TOOLS = ["picker.py", "engine.lua", "lang_zh.lua", "panel.lua", "main.lua"]
+RELEASE_TOOLS = ["picker.py", "engine.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua"]
 RELEASE_ALLOWED_EXT = (".json", ".png", ".patch_0", ".stream", ".gpu_resources", ".md", ".txt", ".ini", ".py", ".lua")
 AUTHOR = "mostlycloudy (original v3), Hung1510 (v4 edit)"
 DEFAULT_HOTKEY = "F7"
@@ -1002,6 +1002,7 @@ LUA_STR = r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\""
 
 
 LANG_ZH = os.path.join(HERE, "lang_zh.lua")
+LANG_JA = os.path.join(HERE, "lang_ja.lua")
 
 
 def lang_names(path=LANG_ZH):
@@ -1040,7 +1041,7 @@ def cmd_export_web(args):
         "aliases": ALIASES,
         "armors": armor_list(),
         "engine": engine_text(),
-        "lang": {"zh": lang_names()},
+        "lang": {"zh": lang_names(), "ja": lang_names(LANG_JA)},
         "presets": [{"file": os.path.basename(p), "ini": open(p, encoding="utf-8").read()}
                     for p in preset_files(os.path.join(root, "presets"))],
     }
