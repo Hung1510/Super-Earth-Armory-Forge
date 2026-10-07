@@ -371,6 +371,11 @@ end
 local BS = { ids = {}, bm = ffi_.new('uint8_t[65536]'), seen = {}, blocks = {}, nblocks = 0,
              mem = nil, busy = false, scans = 0, dirty = false, wrote = false, auto_at = nil, bytes_left = 96 * 1048576 }
 R.boosters = BS
+BS.eff, BS.em, BS.effblocks, BS.kinds = {}, ffi_.new('uint8_t[65536]'), {}, {}
+for id, name in pairs(MOD.research and MOD.research.effect_ids or {}) do
+    BS.eff[id] = name
+    BS.em[id % 65536] = 1
+end
 for id, name in pairs(MOD.research and MOD.research.booster_ids or {}) do
     BS.ids[id] = name
     BS.bm[id % 65536] = 1
@@ -393,30 +398,46 @@ end
 local function bs_block(address, kind, payload)
     if BS.seen[address] or kind == MOD.type_kit or payload > 262144 or payload < 32 then return end
     BS.seen[address] = true
-    if BS.bytes_left < payload or BS.nblocks >= 60 then return end
+    local k = BS.kinds[kind]
+    if not k then k = { n = 0, lo = payload, hi = payload }; BS.kinds[kind] = k end
+    k.n = k.n + 1
+    k.lo, k.hi = math.min(k.lo, payload), math.max(k.hi, payload)
+    if BS.bytes_left < payload then return end
     local blob = api.read(address + 24, payload)
     if not blob or #blob < 32 then return end
     BS.bytes_left = BS.bytes_left - #blob
+    if k.n <= 2 and not k.head and kind ~= MOD.type_passive then      -- the first bytes of every other table type
+        k.head = {}
+        for _, l in ipairs(words(blob, 0, math.min(#blob - #blob % 4, 192), 'head ')) do k.head[#k.head + 1] = l end
+    end
     local p32 = ffi_.cast('const uint32_t *', blob)
-    local hits = {}
+    local hits, ehits, edistinct, seen_e = {}, {}, 0, {}
+    local isperk = kind == MOD.type_passive
     for i = 0, math.floor(#blob / 4) - 1 do
         local v = p32[i]
         if BS.bm[v % 65536] ~= 0 and BS.ids[v] then hits[#hits + 1] = { off = i * 4, name = BS.ids[v] } end
-    end
-    if #hits == 0 then return end
-    local b = { address = address, kind = kind, payload = #blob, hits = hits, lines = {} }
-    for h = 1, math.min(#hits, 12) do
-        local from = math.max(0, hits[h].off - 64)
-        local to = math.min(#blob - #blob % 4, hits[h].off + 256)
-        b.lines[#b.lines + 1] = string.format('  window around hit %d (%s at +0x%X):', h, hits[h].name, hits[h].off)
-        for _, l in ipairs(words(blob:sub(from + 1, to), 0, to - from, 'payload+' .. string.format('0x%X', from) .. ' ')) do
-            b.lines[#b.lines + 1] = l
+        if not isperk and BS.em[v % 65536] ~= 0 and BS.eff[v] and v ~= 0 then
+            ehits[#ehits + 1] = { off = i * 4, name = BS.eff[v] }
+            if not seen_e[v] then seen_e[v] = true; edistinct = edistinct + 1 end
         end
     end
-    BS.nblocks = BS.nblocks + 1
-    BS.blocks[#BS.blocks + 1] = b
-    BS.dirty = true
-    log(string.format('research: boosters: block 0x%X type 0x%08X (%d bytes) holds %d booster title id(s)', address, kind, #blob, #hits))
+    local function dump(list, into, label, cap)
+        local b = { address = address, kind = kind, payload = #blob, hits = list, lines = {} }
+        for h = 1, math.min(#list, cap) do
+            local from = math.max(0, list[h].off - 64)
+            local to = math.min(#blob - #blob % 4, list[h].off + 256)
+            b.lines[#b.lines + 1] = string.format('  window around hit %d (%s at +0x%X):', h, list[h].name, list[h].off)
+            for _, l in ipairs(words(blob:sub(from + 1, to), 0, to - from, 'payload+' .. string.format('0x%X', from) .. ' ')) do
+                b.lines[#b.lines + 1] = l
+            end
+        end
+        into[#into + 1] = b
+        BS.dirty = true
+        log(string.format('research: boosters: %s block 0x%X type 0x%08X (%d bytes), %d hit(s)', label, address, kind, #blob, #list))
+    end
+    if #hits > 0 and BS.nblocks < 60 then BS.nblocks = BS.nblocks + 1; dump(hits, BS.blocks, 'title', 12) end
+    -- a table that is not the armor passives but uses their modifier ids: booster effects?
+    if edistinct >= 2 and #BS.effblocks < 40 then dump(ehits, BS.effblocks, 'effect', 3) end
 end
 
 local block_before = R.block
@@ -443,6 +464,25 @@ local function bs_write()
             L[#L + 1] = string.format('  hit +0x%04X %s', h.off, h.name)
         end
         for _, l in ipairs(b.lines) do L[#L + 1] = l end
+    end
+    L[#L + 1] = ''
+    L[#L + 1] = '## LDLD blocks (not the armor passives or kits) that use two or more of the armor passives\' modifier ids: ' .. #BS.effblocks
+    for _, b in ipairs(BS.effblocks) do
+        L[#L + 1] = string.format('block 0x%X type 0x%08X payload %d hits %d', b.address, b.kind, b.payload, #b.hits)
+        for i, h in ipairs(b.hits) do
+            if i > 40 then L[#L + 1] = '  ...'; break end
+            L[#L + 1] = string.format('  hit +0x%04X %s', h.off, h.name)
+        end
+        for _, l in ipairs(b.lines) do L[#L + 1] = l end
+    end
+    L[#L + 1] = ''
+    L[#L + 1] = '## every LDLD table type seen (not armor kits): type count min_bytes max_bytes, then its first bytes'
+    local kl = {}
+    for kind, k in pairs(BS.kinds) do kl[#kl + 1] = { kind, k } end
+    table.sort(kl, function(a, b) return a[2].n < b[2].n end)
+    for _, e in ipairs(kl) do
+        L[#L + 1] = string.format('type 0x%08X %d %d %d', e[1], e[2].n, e[2].lo, e[2].hi)
+        for _, l in ipairs(e[2].head or {}) do L[#L + 1] = l end
     end
     if BS.mem then
         L[#L + 1] = ''

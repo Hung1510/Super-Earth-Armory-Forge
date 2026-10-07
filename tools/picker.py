@@ -1150,8 +1150,10 @@ def research_lua(settings, weight, lut_passive=16):
     with open(os.path.join(HERE, "booster-anchors.json"), encoding="utf-8") as f:
         anchors = json.load(f)
     ids = ", ".join("[%s]=%s" % (k, json.dumps(v)) for k, v in sorted(anchors.items(), key=lambda kv: int(kv[0])))
-    flag = "    research = { weight = %s, lut_passive = %d, booster_ids = { %s } },   -- research build: see tools/research.lua\n" % (
-        "nil" if weight is None else weight, lut_passive, ids)
+    eff = ", ".join("[%d]=%s" % (h, json.dumps(v[0])) for h, v in sorted(EFFECTS.items()) if h)
+    flag = ("    research = { weight = %s, lut_passive = %d, booster_ids = { %s }, effect_ids = { %s } },"
+            "   -- research build: see tools/research.lua\n") % (
+        "nil" if weight is None else weight, lut_passive, ids, eff)
     full = full.replace("    blank = true,", flag + "    blank = true,", 1)
     return full.replace(panel, research + "\n" + panel, 1)
 

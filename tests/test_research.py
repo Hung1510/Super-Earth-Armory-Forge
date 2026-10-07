@@ -187,6 +187,11 @@ for i, name in enumerate(("Dead Sprint", "Stun Pods", "Armed Resupply Pods")):
 struct.pack_into("<I", payload, 700, 0x12345678)
 hdr = b"LDLD" + struct.pack("<III", 1, 0xB0057E50, len(payload)) + b"\0" * 8
 g4.mem[GAME_BASE][BLK:BLK + len(hdr) + len(payload)] = hdr + bytes(payload)
+EFF = bytearray(512)                                          # a table that reuses the armor passives' modifier ids
+struct.pack_into("<IIfIIf", EFF, 0x20, 0x2875F44A, 1, 2.0, 0x93EB16A7, 1, 5.0)
+ehdr = b"LDLD" + struct.pack("<III", 1, 0xB0057E51, len(EFF)) + b"\0" * 8
+at2 = len(g4.mem[GAME_BASE]) + 16
+g4.mem[GAME_BASE][at2:at2 + len(ehdr) + len(EFF)] = ehdr + bytes(EFF)
 g4.mem[0x31000000] = bytearray(0x4000)                       # not an LDLD block: a cluster in plain memory
 for i, name in enumerate(("Firebomb Hellpods", "Dead Sprint", "Muscle Enhancement")):
     struct.pack_into("<II", g4.mem[0x31000000], 0x200 + i * 48, by_name[name], i)
@@ -199,6 +204,10 @@ check("hit +0x0000 Dead Sprint" in bt and "hit +0x0040 Stun Pods" in bt and "hit
 check("%08X" % by_name["Stun Pods"] in bt and "0000000B" in bt, "... with the words around each hit in hex")
 bt = open(bpath, encoding="utf-8").read()
 check("## whole-memory scan 1" in bt, "the whole-memory scan starts by itself, no key needed")
+check("type 0xB0057E51 payload 512 hits 2" in bt and "hit +0x0020 stims" in bt and "hit +0x002C stim_duration" in bt,
+      "a non-passive table using the passives' modifier ids is reported, with the ids' names")
+check("type 0xB0057E51 1 512 512" in bt and "type 0xB0057E50 1 1024 1024" in bt and "head +0x0000: " in bt,
+      "every other table type is listed with its size and first bytes")
 g4.key(0x73)
 g4.tick(600)
 bt = open(bpath, encoding="utf-8").read()
