@@ -1348,17 +1348,22 @@ function KITS.wear_tick(now)
             -- armor being worn are touched, and only a word that already holds a booster number (0..21).
             local want = LOADOUT and LOADOUT.booster
             if want and not MOD.swap_only then
-                local set, held = 0, nil
+                local set, held, seen = 0, nil, {}
                 for _, addr in ipairs(W.spots) do
                     local b = api.read(addr - 8, 16)
                     if b and #b == 16 and u32(b, 8) == best and KITS.ids[u32(b, 0)] == 1 and KITS.ids[u32(b, 4)] == 2 then
                         local cur = u32(b, 12)
+                        seen[#seen + 1] = cur
                         if cur <= 21 and cur ~= want and api.write(addr + 4, u32_bytes(want)) then set = set + 1; held = cur end
                     end
                 end
                 if set > 0 then
                     log('booster: ' .. BOOSTER_NAMES[want] .. ' written to ' .. set .. ' loadout place(s) (they held ' .. tostring(held) .. ')')
                     state.booster_note = BOOSTER_NAMES[want]
+                elseif now >= (W.booster_log_at or 0) then       -- nothing written: say what the places hold (every 30 s)
+                    W.booster_log_at = now + 30
+                    log('booster: ' .. BOOSTER_NAMES[want] .. ' not written; worn armor in ' .. #seen .. ' place(s), slot values: '
+                        .. (#seen > 0 and table.concat(seen, ',', 1, math.min(#seen, 12)) or 'none'))
                 end
             end
         else                                    -- the spots are gone (new session?): search where they were
