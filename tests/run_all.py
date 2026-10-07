@@ -42,7 +42,6 @@ SUITES = [
     ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),
     ("test_swap_edition.py", "Passive Swap edition (Nexus build)"),
-    ("test_quad_drop.py", "Super Earth Quad Drop: zip, archive, fake-runtime run"),
     ("test_release.py", "release zips, blank install, old saves"),
     ("test_web_parity.js", "web builder output is byte-identical to Python"),
     ("test_web_i18n.js", "web builder in Simplified Chinese: names, wording, hints"),

@@ -32,14 +32,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua")]
 
 MOD_ID = "mods/community/passive_picker_v4"
-QD_ID = "mods/community/super_earth_quad_drop"      # 7.0: Quad Drop, a second addon inside the full edition's archive (tools/quad_drop.lua)
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.0"
+VERSION = "6.5"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
-RELEASE_TOOLS = ["picker.py", "engine.lua", "quad_drop.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua"]
+RELEASE_TOOLS = ["picker.py", "engine.lua", "lang_zh.lua", "lang_ja.lua", "panel.lua", "main.lua"]
 RELEASE_ALLOWED_EXT = (".json", ".png", ".patch_0", ".stream", ".gpu_resources", ".md", ".txt", ".ini", ".py", ".lua")
 AUTHOR = "mostlycloudy (original v3), Hung1510 (v4 edit)"
 DEFAULT_HOTKEY = "F7"
@@ -815,19 +814,9 @@ def compile_loadout(settings, profiles, blank=False, swap_only=False):
     return "-- HD2-Addon: " + MOD_ID + "\n" + generate_lua(settings, profiles, blank, swap_only)
 
 
-def quad_drop_lua():
-    """Super Earth Quad Drop (7.0): a second addon in the full edition's archive."""
-    with open(os.path.join(HERE, "quad_drop.lua"), encoding="utf-8") as f:
-        return "-- HD2-Addon: " + QD_ID + "\n" + f.read().replace("@VERSION@", VERSION)
-
-
-def archive_for(full_lua, quad_drop=False):
+def archive_for(full_lua):
     body = full_lua.encode("utf-8")
-    resources = {MOD_ID: struct.pack("<II", len(body), ENVELOPE_VERSION) + body}
-    if quad_drop:
-        qd = quad_drop_lua().encode("utf-8")
-        resources[QD_ID] = struct.pack("<II", len(qd), ENVELOPE_VERSION) + qd
-    return make_archive(resources)
+    return make_archive({MOD_ID: struct.pack("<II", len(body), ENVELOPE_VERSION) + body})
 
 
 def describe_profiles(profiles):
@@ -964,9 +953,7 @@ def cmd_release(args):
         "Version": 1, "Guid": guid, "Name": "%s v%s" % (TITLE, VERSION),
         "Description": "v%s. Press %s in game to open the armory: tick any armor passives, "
                        "change their values live, save and swap loadouts (%s). Or build one at "
-                       "https://hung1510.github.io/Super-Earth-Armory-Forge/ . Includes Quad Drop "
-                       "(support weapon pods drop 4 items; needs HD2Runtime and Mod Options Menu, "
-                       "set up in the Mod Options Menu). %s"
+                       "https://hung1510.github.io/Super-Earth-Armory-Forge/ . %s"
                        % (VERSION, DEFAULT_HOTKEY, DEFAULT_SWAP_HOTKEY, CREDIT),
     }
     if swap:
@@ -982,12 +969,7 @@ def cmd_release(args):
     if swap:
         extras = ["CREDITS.txt"]
     trees = [] if swap else ["examples", "presets"]
-    if not swap:
-        ok, err = compile_lua(quad_drop_lua())
-        if ok is False:
-            print("Quad Drop Lua FAIL: %s" % err)
-            return 1
-    archive = archive_for(full, quad_drop=not swap)
+    archive = archive_for(full)
     os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
     with zipfile.ZipFile(args.zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
         _zip_write(z, "manifest.json", (json.dumps(manifest, indent=2) + "\n").encode())
@@ -1211,7 +1193,6 @@ def cmd_research(args):
                                                          "lut": CATALOG[find_perk(args.lut_passive, "--lut-passive")][0]}).encode("utf-8"))
     print("Wrote research    : %s  (experiment: %s)" % (args.zip, what))
     return 0
-
 
 
 def cmd_check_dump(args):

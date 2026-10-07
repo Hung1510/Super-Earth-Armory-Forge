@@ -56,7 +56,7 @@ lua_path = tempfile.mktemp(suffix=".lua")
 arc = z.read(picker.ARCHIVE_NAME)
 settings, _ = picker.load_config_text("[settings]\nname = %s\n[profile: Med-Kit]\n" % picker.TITLE)
 full = picker.compile_loadout(settings, [], blank=True)
-check(picker.archive_for(full, quad_drop=True) == arc, "the zipped patch is the blank build plus the Quad Drop addon")
+check(picker.archive_for(full) == arc, "the zipped patch is the blank build")
 with open(lua_path, "w", encoding="utf-8") as f:
     f.write(full)
 
