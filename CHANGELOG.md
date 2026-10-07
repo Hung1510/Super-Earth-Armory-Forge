@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.5 (2026-10-07)
+Both editions (full and Passive Swap):
+- **Faster start:** the search for the game's passive table now reads memory four bytes at a time instead of one, about 2.5x faster in a benchmark, so the mod finishes its first search sooner and takes less of each frame while it runs. If a game build ever stores the table off that grid, the mod notices it found nothing and searches byte by byte, as before.
+
 ## 6.4 (2026-10-07)
 Both editions (full and Passive Swap):
 - **日本語:** the in-game panel and the web builder in Japanese. Keys tab → *Language / 语言* → 日本語. Passive and armor names (222 armors, 32 passives) are the game's own Japanese names, read from the game's text; the rest is translated for the panel, and uses the game's wording (ダメージ耐性, アーマー評価, 回復薬). Set the game's text language to Japanese so its font has the characters; if it can't draw them the panel stays English and the Keys tab says so.
