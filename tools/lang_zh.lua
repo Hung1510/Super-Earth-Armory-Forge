@@ -212,6 +212,7 @@ LANGS.zh = {
         ['Only stratagems you have unlocked are put in. Not while you are ready.'] = '只会放入你已解锁的战备。准备状态下无效。',
         ['Pick four stratagems on the loadout screen, then "+ Save current loadout". Click a saved one to put it back.'] = '在配装界面选好四个战备，然后点「+ 保存当前配装」。点已保存的可以放回去。',
         ['Finding the game\'s loadout code...'] = '正在查找游戏的配装代码...',
+        ['Off removes the Stratagems tab and its key, and the mod never reads the game\'s stratagem code.'] = '关闭后没有战备页和对应按键，模组也不会读取游戏的战备代码。',
         ['Quick-swap key'] = '快速切换键',
         ['Turn off'] = '关闭',
         ['Move up'] = '上移',

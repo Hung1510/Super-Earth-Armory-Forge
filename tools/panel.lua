@@ -752,26 +752,64 @@ end
 
 -- The quick-swap key for stratagem presets (default F10, Shift+key goes back). It is kept apart from
 -- loadout.ini, in ArmoryForge\stratagem-key.txt ("key = F10"), so the loadout format stays as it is.
-function PP.strat_key()
-    if PP.strat_key_value == nil then
-        PP.strat_key_value = 'F10'
-        local text = read_saved('stratagem-key.txt')
-        local k = text and text:match('key%s*=%s*(%w+)')
-        if k then
-            k = k:upper()
-            if k == 'OFF' or PP.fkey(k) then PP.strat_key_value = k end
+function PP.strat_load_settings()
+    PP.strat_key_value, PP.strat_enabled = 'F10', true
+    local text = read_saved('stratagem-key.txt')
+    if not text then return end
+    for line in (text .. '\n'):gmatch('([^\n]*)\n') do
+        if not line:match('^%s*;') then                      -- the comment lines in the file mention both words
+            local name, value = line:match('^%s*(%a+)%s*=%s*(%w+)')
+            if name == 'key' then
+                local k = value:upper()
+                if k == 'OFF' or PP.fkey(k) then PP.strat_key_value = k end
+            elseif name == 'stratagems' and value:lower() == 'off' then
+                PP.strat_enabled = false
+            end
         end
     end
+end
+
+function PP.strat_save_settings()
+    local path = forge_file('stratagem-key.txt')
+    if not path then return end
+    write_file(path, table.concat({
+        '; Super Earth Armory Forge: stratagem presets (full edition)',
+        '; stratagems = on or off: off removes the Stratagems tab and the key, and the mod never touches the stratagem code',
+        '; key = F1..F12 or off: the key that cycles your stratagem presets',
+        'stratagems = ' .. (PP.strat_enabled and 'on' or 'off'),
+        'key = ' .. PP.strat_key_value:lower(), '' }, '\r\n'))
+end
+
+-- the stratagem presets are on: the full edition, and not switched off on the Keys tab
+function PP.strat_on()
+    if MOD.swap_only then return false end
+    if PP.strat_enabled == nil then PP.strat_load_settings() end
+    return PP.strat_enabled
+end
+
+function PP.set_strat_enabled(on)
+    PP.strat_on()
+    if on == PP.strat_enabled then return end
+    PP.strat_enabled = on
+    PP.strat_save_settings()
+    PP.strat_pending = nil
+    if not on and ui.settings == 'strat' then ui.settings = 'keys' end
+    ui.version = ui.version + 1
+    say(on and 'Stratagem presets are on' or 'Stratagem presets are off: no tab, no key, nothing runs', 4)
+end
+
+function PP.strat_key()
+    if not PP.strat_on() then return 'OFF' end
     local k = PP.strat_key_value
     if k == 'OFF' or k == hotkey() or k == swap_key() then return 'OFF' end    -- the other two keys win
     return k
 end
 
 function PP.set_strat_key(k)
+    PP.strat_on()
     if k ~= 'OFF' and (not PP.fkey(k) or k == hotkey() or k == swap_key()) then return end
     PP.strat_key_value = k
-    local path = forge_file('stratagem-key.txt')
-    if path then write_file(path, '; Super Earth Armory Forge: the key that cycles your stratagem presets (F1..F12 or off)\r\nkey = ' .. k:lower() .. '\r\n') end
+    PP.strat_save_settings()
     say(k == 'OFF' and 'Stratagem quick-swap key turned off' or ('Stratagem presets now cycle with ' .. k .. '  (Shift ' .. k .. ' goes back)'), 4)
 end
 
@@ -1274,7 +1312,7 @@ function PP.report()
         'last panel error=' .. tostring(d.last_error or '-'),
         PP.input_desc(),
         'language=' .. tostring(ui.lang or 'en') .. '; font test: ' .. tostring(PP.font_result or 'not run'),
-        'stratagem presets=' .. tostring(STRAT.state) .. (STRAT.why and (' (' .. tostring(STRAT.why) .. ')') or ''),
+        'stratagem presets=' .. ((not MOD.swap_only and PP.strat_enabled == false) and 'switched off' or tostring(STRAT.state)) .. (STRAT.why and (' (' .. tostring(STRAT.why) .. ')') or ''),
         '--- other mods ---',
         'loader api=' .. tostring(type(loader) == 'table' and loader.api) .. ' fields: ' .. PP.names_of(loader, 12),
         'update bus jobs: ' .. PP.names_of(type(bus) == 'table' and bus.jobs, 20),
@@ -1539,7 +1577,7 @@ local function draw(width, height)
     local regions = {}
     ui.tab_order = {}                        -- tab keys left to right (LB / RB), drawn or not
     for n = 1, #(LOADOUT and LOADOUT.profiles or {}) do ui.tab_order[n] = 'tab:' .. n end
-    for _, k in ipairs(MOD.swap_only and { 'add', 'presets', 'settings', 'guide' } or { 'add', 'presets', 'strat', 'settings', 'guide' }) do ui.tab_order[#ui.tab_order + 1] = k end
+    for _, k in ipairs(not PP.strat_on() and { 'add', 'presets', 'settings', 'guide' } or { 'add', 'presets', 'strat', 'settings', 'guide' }) do ui.tab_order[#ui.tab_order + 1] = k end
     local ink_font, ink_material = font.font, font.material
     local up = string.upper
 
@@ -1864,7 +1902,7 @@ local function draw(width, height)
     end
     x = x + tab('add', '+ Armor', x, ui.adding, C.YELLOW) + 6
     x = x + tab('presets', 'Presets', x, ui.presets, C.YELLOW) + 6
-    if not MOD.swap_only then x = x + tab('strat', 'Stratagems', x, ui.settings == 'strat', C.YELLOW) + 6 end
+    if PP.strat_on() then x = x + tab('strat', 'Stratagems', x, ui.settings == 'strat', C.YELLOW) + 6 end
     x = x + tab('settings', 'Keys', x, ui.settings == 'keys', C.MUTED) + 6
     tab('guide', 'Guide', x, ui.settings == 'guide', C.MUTED)
     if p and not ui.adding and not ui.presets and not ui.settings then
@@ -2078,7 +2116,7 @@ local function draw(width, height)
         end
 
     -- ============================================================ Stratagems (presets for the loadout screen)
-    elseif ui.settings == 'strat' and not MOD.swap_only then
+    elseif ui.settings == 'strat' and PP.strat_on() then
         if not PP.strat_user then PP.load_strat() end
         local list = PP.strat_user
         head(IX, TOP + 14, 'Hellpod loadout', 'Stratagem presets', IW)
@@ -2210,7 +2248,7 @@ local function draw(width, height)
         rows('Keyboard', {
             { hotkey(), 'Open / close the panel' },
             swap_key() ~= 'OFF' and { swap_key(), 'Swap to the next preset (panel closed)' } or { 'KEYS TAB', 'Quick-swap key: off' },
-            (not MOD.swap_only and PP.strat_key() ~= 'OFF') and { PP.strat_key() .. '|SHIFT ' .. PP.strat_key(), 'Next / previous stratagem preset (loadout screen)' } or false,
+            (PP.strat_key() ~= 'OFF') and { PP.strat_key() .. '|SHIFT ' .. PP.strat_key(), 'Next / previous stratagem preset (loadout screen)' } or false,
             { 'CTRL+Z', 'Undo' }, { 'CTRL+F', 'Search passives and effects' },
             { 'PGUP|PGDN', 'Scroll a long list' }, { 'ENTER|ESC', 'Set / cancel a typed value' },
             { 'CTRL +|CTRL -', 'Panel size (CTRL 0 resets size and position)' },
@@ -2248,7 +2286,15 @@ local function draw(width, height)
         y = key_grid('hotkey', hotkey(), nil, y + 20, false) + 14
         label('Quick-swap loadouts', IX, y, nil, IW)
         y = key_grid('swap_hotkey', swap_key(), hotkey(), y + 20, true) + 6
-        wrap('Picking the quick-swap key as the panel key turns quick-swap off.', IX, y, 12, C.DIM, IW, 2)
+        y = wrap('Picking the quick-swap key as the panel key turns quick-swap off.', IX, y, 12, C.DIM, IW, 2) + 18
+        if not MOD.swap_only then
+            label('Stratagem presets', IX, y, nil, IW)
+            local sp_on = PP.strat_on()
+            local sx = IX + button('stratfeat:on', 'On', IX, y + 20, nil, 30, true, sp_on) + 8
+            button('stratfeat:off', 'Off', sx, y + 20, nil, 30, true, not sp_on)
+            wrap('Off removes the Stratagems tab and its key, and the mod never reads the game\'s stratagem code.',
+                 IX, y + 58, 12, C.DIM, IW, 3)
+        end
 
         head(RX, TOP + 14, 'Settings', 'Panel', RIW)
         local ry = TOP + 70
@@ -2836,7 +2882,7 @@ local function click(key)
         if arg == 'clear' then PP.set_search('', false) else PP.set_search(ui.search, true) end
     elseif kind == 'settings' then ui.settings, ui.adding, ui.presets = ui.settings ~= 'keys' and 'keys' or false, false, false
     elseif kind == 'guide' then ui.settings, ui.adding, ui.presets = ui.settings ~= 'guide' and 'guide' or false, false, false
-    elseif kind == 'strat' and not MOD.swap_only then
+    elseif kind == 'strat' and PP.strat_on() then
         ui.settings, ui.adding, ui.presets = ui.settings ~= 'strat' and 'strat' or false, false, false
         if ui.settings == 'strat' then
             if not PP.strat_user then PP.load_strat() end
@@ -2950,7 +2996,9 @@ local function click(key)
             else say('Applied "' .. e.name .. '"') end
             ui.strat_at = 0
         else say(tostring(why), 6) end
-    elseif kind == 'skey' and not MOD.swap_only then
+    elseif kind == 'stratfeat' and not MOD.swap_only then
+        PP.set_strat_enabled(arg == 'on')
+    elseif kind == 'skey' and PP.strat_on() then
         if arg == 'off' then PP.set_strat_key('OFF')
         elseif arg == 'next' then PP.set_strat_key(PP.strat_key_step(1))
         elseif arg == 'prev' then PP.set_strat_key(PP.strat_key_step(-1)) end
@@ -3945,7 +3993,7 @@ panel_tick = function(now)
             toast.text, toast.sub, toast.till = 'Press ' .. hotkey() .. ' to forge your armor', 'ready', now + 6
         end
     end
-    if not MOD.swap_only and state.phase == 'ready' then
+    if PP.strat_on() and state.phase == 'ready' then
         pcall(PP.strat_background, now)
         local tk = PP.strat_key()
         if tk ~= 'OFF' and hotkey_pressed(tk) and not ui.value and not ui.naming and now >= (ui.strat_key_at or 0) then

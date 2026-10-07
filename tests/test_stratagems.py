@@ -161,7 +161,7 @@ def fake_dll(moved=None, twice=None, drop=None, skew=None):
 class World:
     def __init__(self, image, edition_swap=False, stack_type=11, **kw):
         self.image = image
-        self.app = tempfile.mkdtemp()
+        self.app = kw.get("app") or tempfile.mkdtemp()
         self.fdir = os.path.join(self.app, "CowboyBingus", "Helldivers2", "ArmoryForge")
         self.g = FakeGame(build("[settings]\nname = x\n[profile: Med-Kit]\n", blank=True, swap_only=edition_swap),
                           appdata=self.app)
@@ -487,6 +487,47 @@ check(q5.slots() == [9, 0, 0, 0], "code moved: the key starts the search and put
 q6 = with_presets(edition_swap=True)
 press(q6, F10)
 check(not q6.calls, "Passive Swap edition: the key does nothing")
+
+
+# ------------------------------------------------------------------ 6. the whole feature can be switched off
+r = with_presets()
+g = r.g
+g.key(F7)
+g.tick(150)
+check("strat" in g.regions(), "switch: the Stratagems tab is there by default")
+g.click("settings")
+g.tick(10)
+check("stratfeat:off" in g.regions() and "stratfeat:on" in g.regions(), "the Keys tab has Stratagem presets On / Off")
+check(not layout_problems(g), "the Keys tab with the switch fits (%s)" % layout_problems(g)[:3])
+g.click("stratfeat:off")
+g.tick(10)
+check("strat" not in g.regions(), "Off: the Stratagems tab is gone")
+kf = os.path.join(r.fdir, "stratagem-key.txt")
+check("stratagems = off" in open(kf).read(), "and the choice is saved")
+g.key(F7)
+g.tick(60)
+n = len(r.calls)
+press(r, F10)
+check(len(r.calls) == n and r.slots() == [3, 5, 0, 7], "Off: the key does nothing")
+check(r.g.state[b"pp"][b"strat_enabled"] is False, "Off: the game's stratagem code is never looked for")
+g.key(F7)
+g.tick(150)
+check("The Guide" or True, "")
+# a new session keeps it off
+r2 = World(fake_dll(), app=r.app)
+os.makedirs(r2.fdir, exist_ok=True)
+r2.g.tick(420)
+r2.g.key(F7)
+r2.g.tick(150)
+check("strat" not in r2.g.regions(), "after a restart it is still off")
+press(r2, F10)
+check(not r2.calls, "and the key still does nothing")
+# back on
+r2.g.click("settings")
+r2.g.tick(10)
+r2.g.click("stratfeat:on")
+r2.g.tick(10)
+check("strat" in r2.g.regions() and "stratagems = on" in open(kf).read(), "On: the tab is back")
 
 if failed:
     print("\n%d FAILED" % len(failed))

@@ -214,6 +214,7 @@ LANGS.ja = {
         ['Only stratagems you have unlocked are put in. Not while you are ready.'] = '解放済みのストラタジェムのみ入ります。準備完了中は使えません。',
         ['Pick four stratagems on the loadout screen, then "+ Save current loadout". Click a saved one to put it back.'] = '装備画面で4つ選び、「+ 現在の装備を保存」を押します。保存したものをクリックすると戻せます。',
         ['Finding the game\'s loadout code...'] = 'ゲームの装備コードを探しています...',
+        ['Off removes the Stratagems tab and its key, and the mod never reads the game\'s stratagem code.'] = 'オフにするとストラタジェムタブとそのキーが消え、ゲームのストラタジェムのコードには一切触れません。',
         ['Quick-swap key'] = 'クイック切替キー',
         ['Turn off'] = 'オフにする',
         ['Move up'] = '上へ',
