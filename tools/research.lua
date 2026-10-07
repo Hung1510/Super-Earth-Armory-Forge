@@ -369,7 +369,7 @@ end
 --  * F4: the whole of memory is searched; hits close together are dumped as clusters
 -- Results: ArmoryForge\boosters-research.txt (u32 words, hex). Nothing is changed in memory.
 local BS = { ids = {}, bm = ffi_.new('uint8_t[65536]'), seen = {}, blocks = {}, nblocks = 0,
-             mem = nil, busy = false, scans = 0, dirty = false, bytes_left = 96 * 1048576 }
+             mem = nil, busy = false, scans = 0, dirty = false, wrote = false, auto_at = nil, bytes_left = 96 * 1048576 }
 R.boosters = BS
 for id, name in pairs(MOD.research and MOD.research.booster_ids or {}) do
     BS.ids[id] = name
@@ -435,6 +435,7 @@ local function bs_write()
         '',
         '## LDLD blocks that hold booster title ids: ' .. #BS.blocks,
     }
+    if not BS.mem then L[#L + 1] = '(the whole-memory scan starts by itself about 10 s after the mod is ready, or press F4)' end
     for _, b in ipairs(BS.blocks) do
         L[#L + 1] = string.format('block 0x%X type 0x%08X payload %d hits %d', b.address, b.kind, b.payload, #b.hits)
         for i, h in ipairs(b.hits) do
@@ -460,7 +461,7 @@ end
 local finish_before = R.finish
 function R.finish()
     finish_before()
-    if BS.dirty then pcall(bs_write) end
+    if BS.dirty or not BS.wrote then BS.wrote = true; pcall(bs_write) end   -- the file exists from the start
 end
 
 local function bs_chunk(base, size)
@@ -516,7 +517,7 @@ local function bs_start(now)
 end
 
 local function bs_step(now)
-    local deadline = api.now() + 0.004
+    local deadline = api.now() + 0.008
     while BS.busy do
         local r = BS.regions[BS.idx]
         if not r then
@@ -532,7 +533,7 @@ local function bs_step(now)
         if BS.cursor >= r.size then
             BS.idx, BS.cursor = BS.idx + 1, 0
         else
-            local take = math.min(1048576, r.size - BS.cursor)
+            local take = math.min(2097152, r.size - BS.cursor)
             pcall(bs_chunk, r.base + BS.cursor, take)
             BS.mem.bytes = BS.mem.bytes + take
             BS.cursor = BS.cursor + take
@@ -559,6 +560,8 @@ local function pressed(vk)
 end
 
 function R.tick(now)
+    BS.auto_at = BS.auto_at or (now + 10)
+    if BS.auto_at ~= true and now >= BS.auto_at and #R.order > 0 then BS.auto_at = true; pcall(bs_start, now) end
     if pressed(0x73) then pcall(bs_start, now) end              -- F4
     if pressed(0x79) then pcall(ls_start, now) end              -- F10
     if pressed(0x7A) then                                       -- F11

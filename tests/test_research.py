@@ -197,11 +197,13 @@ check("block 0x%X type 0xB0057E50 payload 1024 hits 3" % (GAME_BASE + BLK) in bt
 check("hit +0x0000 Dead Sprint" in bt and "hit +0x0040 Stun Pods" in bt and "hit +0x0080 Armed Resupply Pods" in bt,
       "... and says which title sits at which offset (stride 0x40)")
 check("%08X" % by_name["Stun Pods"] in bt and "0000000B" in bt, "... with the words around each hit in hex")
+bt = open(bpath, encoding="utf-8").read()
+check("## whole-memory scan 1" in bt, "the whole-memory scan starts by itself, no key needed")
 g4.key(0x73)
 g4.tick(600)
 bt = open(bpath, encoding="utf-8").read()
-check("## whole-memory scan 1" in bt and "cluster at 0x31000200, " in bt and "3 distinct title(s)" in bt,
-      "F4: titles close together in plain memory are reported as a cluster")
+check("## whole-memory scan 2" in bt and "cluster at 0x31000200, " in bt and "3 distinct title(s)" in bt,
+      "F4 scans again: titles close together in plain memory are reported as a cluster")
 check("hit 0x31000260 Muscle Enhancement" in bt, "... with each hit's address and title")
 check(os.path.exists(bpath) and "0x12345678" not in bt and "12345678" not in bt, "words far from any hit are not dumped")
 
