@@ -1570,20 +1570,38 @@ local function draw(width, height)
     local function font_px(size) return math.max(7, px(size * s)) end
     -- width in screen pixels of a text at a whole-pixel font size: measured when the
     -- engine can, else a safe per-character estimate (on the wide side)
+    -- 7.1: remembered per font, size and text: a redraw (every hover change) used to ask the engine to
+    -- measure the same ~150 labels again each time
     local function measure_px(value, sz)
+        local mc = PP.mcache
+        local fid = font.text                      -- a plain string: the font handle itself is new each time
+        if not mc or mc.font ~= fid then mc = { font = fid, n = 0 }; PP.mcache = mc end
+        local by_size = mc[sz]                    -- one table per size: no string built per lookup
+        if not by_size then by_size = {}; mc[sz] = by_size end
+        local hit = by_size[value]
+        if hit then return hit end
+        local out
         local ok, lo, hi = pcall(Gui.text_extents, gui, value, ink_font, sz)
         if ok and lo and hi then
             local a, b = vx(lo), vx(hi)
-            if a and b and b > a then return b - a end
+            if a and b and b > a then out = b - a end
         end
-        local w = 0
-        for ch in value:gmatch('.') do
-            local b = ch:byte()
-            if b >= 128 then w = w + (b >= 192 and 1.0 or 0)     -- a UTF-8 character (Chinese: about one em)
-            else w = w + (ch:find('[%%@MWmw]') and 0.98 or ch:find('[%u+=<>#&]') and 0.8 or ch:find('%d') and 0.66
-                     or ch:find('[%s%.,:;!|il\'%-%(%)%[%]]') and 0.36 or 0.62) end
+        if not out then
+            local w = 0
+            for ch in value:gmatch('.') do
+                local b = ch:byte()
+                if b >= 128 then w = w + (b >= 192 and 1.0 or 0)     -- a UTF-8 character (Chinese: about one em)
+                else w = w + (ch:find('[%%@MWmw]') and 0.98 or ch:find('[%u+=<>#&]') and 0.8 or ch:find('%d') and 0.66
+                         or ch:find('[%s%.,:;!|il\'%-%(%)%[%]]') and 0.36 or 0.62) end
+            end
+            out = w * sz
         end
-        return w * sz
+        if mc.n >= 5000 then mc = { font = fid, n = 0 }; PP.mcache = mc end   -- typed names, search text: bounded
+        by_size = mc[sz] or {}
+        mc[sz] = by_size
+        by_size[value] = out
+        mc.n = mc.n + 1
+        return out
     end
     -- width in panel units
     local T = PP.tr                       -- the panel's language (English: unchanged)

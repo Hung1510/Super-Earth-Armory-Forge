@@ -40,6 +40,7 @@ SUITES = [
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
     ("test_stratagems.py", "stratagem presets: the loadout screen, found by signature, applied through the game's calls"),
     ("test_recipes.py", "recipes: named passive combos, saved to my-recipes.txt"),
+    ("test_perf.py", "panel redraw cost: labels measured once, then remembered"),
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
     ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),
