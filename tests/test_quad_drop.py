@@ -144,7 +144,7 @@ else:
         if not check_ids:
             failed.append("slots of %s: %s" % (ops[i]["plan"]["id"], ids_))
     check(std == 17 and heavy == 5, "17 standard racks (slots 2,3,4) and 5 heavy racks (slots 3,4)")
-    check(not any("rejected" in l.lower() or "failed" in l.lower() for l in log.values()), "no error in the log")
+    check(not any("rejected" in ln.lower() or "failed" in ln.lower() for ln in log.values()), "no error in the log")
 
     # the Supply Box replaces the extra gun while its toggle is on; the extra gun comes back when it is off
     first = ops[1]["plan"]["operations"][1]            # extra-gun-slot-2 of the first standard rack
