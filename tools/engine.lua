@@ -1314,7 +1314,7 @@ function KITS.wear_tick(now)
             end
         end
     elseif W.state == 'scanning' then
-        local deadline = api.now() + WEAR_BUDGET
+        local deadline = api.now() + ((LOADOUT and LOADOUT.booster and not MOD.swap_only) and 0.004 or WEAR_BUDGET)   -- booster = ...: 4 ms a frame, the search ends sooner
         while true do
             local r = W.regions[W.idx]
             if not r then
