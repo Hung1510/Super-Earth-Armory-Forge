@@ -735,8 +735,47 @@
     return cat.list.filter((c) => want.has(c.name.toLowerCase())).map((c) => c.id);
   }
 
+  // ------------------------------------------------------------------ compare
+  // What differs between two builds, armor by armor, like the in-game Compare view.
+  // -> [{ perk, name, rows: [{ sign: "-" | "+" | "~", text }] }]; "-" only in a, "+" only in b.
+  function diffStates(cat, a, b) {
+    const pa = new Map(a.profiles.map((p) => [p.perk, p]));
+    const pb = new Map(b.profiles.map((p) => [p.perk, p]));
+    const order = [...pa.keys(), ...[...pb.keys()].filter((k) => !pa.has(k))];
+    const nm = (pid) => (cat.byId.get(pid) || { name: "#" + pid }).name;
+    const out = [];
+    for (const perk of order) {
+      const x = pa.get(perk), y = pb.get(perk), rows = [];
+      if (!y) rows.push({ sign: "-", text: "only in the first" });
+      else if (!x) rows.push({ sign: "+", text: "only in the second" });
+      else {
+        for (const c of cat.list) {
+          if (c.id === perk) continue;
+          const ia = x.enabled.includes(c.id), ib = y.enabled.includes(c.id);
+          if (ia && !ib) rows.push({ sign: "-", text: c.name });
+          else if (ib && !ia) rows.push({ sign: "+", text: c.name });
+        }
+        const keys = [...new Set([...Object.keys(x.tweaks), ...Object.keys(y.tweaks)])].sort();
+        for (const k of keys) {
+          const pid = parseInt(k.split(".")[0], 10);
+          const live = pid === perk || (x.enabled.includes(pid) && y.enabled.includes(pid));
+          const eff = live && effectsOf(cat, pid).find((e) => e.key === k.slice(k.indexOf(".") + 1));
+          if (!eff) continue;
+          const va = k in x.tweaks ? x.tweaks[k] : eff.def, vb = k in y.tweaks ? y.tweaks[k] : eff.def;
+          if (Math.abs(va - vb) > 1e-6) rows.push({ sign: "~", text: `${nm(pid)} ${eff.key.replace(/^stat_/, "").replace(/_/g, " ")}: ${va} -> ${vb}` });
+        }
+        if (x.conflicts !== y.conflicts) rows.push({ sign: "~", text: `overlaps: ${x.conflicts} -> ${y.conflicts}` });
+        const w = (v) => (v === null || v === undefined ? "game" : WEIGHT_NAMES[v]);
+        if (w(x.weight) !== w(y.weight)) rows.push({ sign: "~", text: `weight: ${w(x.weight)} -> ${w(y.weight)}` });
+        if ((x.own !== false) !== (y.own !== false)) rows.push({ sign: "~", text: `armor's own passive: ${x.own === false ? "off" : "kept"} -> ${y.own === false ? "off" : "kept"}` });
+      }
+      if (rows.length) out.push({ perk, name: perk === EVERY ? "Every armor" : nm(perk), rows });
+    }
+    return out;
+  }
+
   return {
-    recipeCode, readCode, recipeIds,
+    diffStates, recipeCode, readCode, recipeIds,
     ConfigError, TYPE_NAMES, WEIGHT_NAMES, ARCHIVE_NAME, EVERY, makeCatalog, effectsOf, findPerk, parseIni,
     loadConfigText, generateLua, archiveFor, resourceHash, describeProfiles, manifestFor,
     serializeIni, stateFromText, pyRepr, fmtG, luaNum, howToEdit, compactIni,

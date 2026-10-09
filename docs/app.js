@@ -241,7 +241,23 @@
     renderTabs();
     renderProfile();
     renderRecipes();
+    renderCompare();
     compile();
+  }
+
+  // ---------------------------------------------------------------- compare
+  function renderCompare() {
+    const out = $("cmpOut"), v = $("cmpSel").value;
+    const p = v && data.presets.find((x) => x.file === v);
+    if (!p) { out.hidden = true; return; }
+    let rows;
+    try {
+      const diff = core.diffStates(cat, effectiveState(), core.stateFromText(cat, p.ini));
+      rows = diff.length ? diff.map((d) => `<li><b>${esc(d.name)}</b><br>${d.rows.map((r) => `${esc(r.sign)} ${esc(r.text)}`).join("<br>")}</li>`)
+        : ["<li>These two are the same.</li>"];
+    } catch (e) { rows = [`<li>${esc(e.message)}</li>`]; }
+    out.innerHTML = `<li class="hint">- only in your build<br>+ only in ${esc(presetName(p))}<br>~ a different value</li>` + rows.join("");
+    out.hidden = false;
   }
 
   // ---------------------------------------------------------------- recipes
@@ -381,6 +397,7 @@
       loadIni(p.ini, `Loaded preset: ${presetName(p)}`);
     });
 
+    $("cmpSel").addEventListener("change", () => renderCompare());
     $("importBtn").addEventListener("click", () => $("importFile").click());
     $("importFile").addEventListener("change", async (e) => {
       const f = e.target.files[0];
@@ -645,6 +662,7 @@
       const d = (p.ini.match(/^;\s*[^:]+:\s*(.+)$/m) || [])[1] || "";
       o.textContent = presetName(p) + (d ? ": " + d.replace(/ on Med-Kit armour\.?$/, "") : "");
       $("presetSel").appendChild(o);
+      $("cmpSel").appendChild(o.cloneNode(true));
     }
     bind();
     bindRecipes();

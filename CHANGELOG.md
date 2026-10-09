@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.2 (2026-10-09)
+Web builder (the mods themselves are unchanged from 7.1):
+- **Compare my build with...:** pick any built-in preset and the page lists what differs from your build, armor by armor: passives only in one of them, changed values, overlap policy, weight, and whether the armor's own passive is kept. It updates as you edit. The same view is in the game panel since 7.1.
+
 ## 7.1 (2026-10-08)
 Both editions (full and Passive Swap):
 - **Lighter panel:** the panel measured the width of about 150 labels with the game's engine every time it redrew (each time the cursor moved onto another button or the tab changed). It now measures each label once and remembers it, so a redraw costs about a tenth of what it did in my benchmark. Switching to a language, size or font measures again once.

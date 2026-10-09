@@ -190,5 +190,16 @@ catch (e) { if (!/Did you mean: Democracy Protects/.test(e.message)) { failed++;
   if (core.readCode("hello") !== null || core.readCode("AFS1:" + code.slice(5)).kind !== "stratagems") { failed++; console.log("FAIL readCode kinds"); }
 }
 
+// compare view: same build -> nothing; one passive and one value apart -> two rows
+{
+  const base = core.stateFromText(cat, "[profile: Med-Kit]\nScout = on\n");
+  const other = core.stateFromText(cat, "[profile: Med-Kit]\nFortified = on\nScout = on\nScout.detection_radius = 5\n");
+  const same = core.diffStates(cat, base, base);
+  const d = core.diffStates(cat, base, other);
+  const rows = d.length ? d[0].rows : [];
+  if (same.length || d.length !== 1 || !rows.some((r) => r.sign === "+" && r.text === "Fortified")) { failed++; console.log("FAIL compare: " + JSON.stringify(d)); }
+  else console.log("ok   compare view: " + rows.map((r) => r.sign + " " + r.text).join("; "));
+}
+
 console.log(failed ? `\n${failed} FAILED` : "\nall parity checks passed");
 process.exit(failed ? 1 : 0);
