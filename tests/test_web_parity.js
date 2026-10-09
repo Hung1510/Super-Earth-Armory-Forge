@@ -174,5 +174,21 @@ nums.forEach((n, i) => {
 try { core.loadConfigText(cat, "[profile: Med-Kit]\nDemocracy Protect = on\n"); failed++; console.log("FAIL typo accepted"); }
 catch (e) { if (!/Did you mean: Democracy Protects/.test(e.message)) { failed++; console.log("FAIL typo msg: " + e.message); } }
 
+// recipes: data.json carries them, every passive exists, and the share code is the one the game panel makes
+{
+  const rs = data.recipes || [];
+  const miss = [];
+  for (const r of rs) for (const n of r.passives) if (!cat.byName.has(n.toLowerCase().replace(/[^a-z0-9]/g, "")) && !cat.list.some((c) => c.name === n)) miss.push(n);
+  if (rs.length < 5 || miss.length) { failed++; console.log("FAIL recipes in data.json: " + rs.length + " recipes, unknown " + miss.join(", ")); }
+  const ghost = rs.find((r) => r.name === "Ghost");
+  const code = ghost && core.recipeCode(ghost.name, ghost.passives);
+  const back = core.readCode(code || "");
+  if (code !== "AFR1:R2hvc3R8U2NvdXR8UmVkdWNlZCBTaWduYXR1cmV8RmVldCBGaXJzdA" || !back || back.kind !== "recipe" || back.passives.join() !== ghost.passives.join()) { failed++; console.log("FAIL recipe code: " + code); }
+  else console.log("ok   recipes: data.json, AFR1 code round trip");
+  const ids = core.recipeIds(cat, ghost.passives);
+  if (ids.length !== ghost.passives.length) { failed++; console.log("FAIL recipeIds " + ids.length); }
+  if (core.readCode("hello") !== null || core.readCode("AFS1:" + code.slice(5)).kind !== "stratagems") { failed++; console.log("FAIL readCode kinds"); }
+}
+
 console.log(failed ? `\n${failed} FAILED` : "\nall parity checks passed");
 process.exit(failed ? 1 : 0);

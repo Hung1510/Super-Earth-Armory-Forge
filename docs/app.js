@@ -240,7 +240,86 @@
     renderArmors();
     renderTabs();
     renderProfile();
+    renderRecipes();
     compile();
+  }
+
+  // ---------------------------------------------------------------- recipes
+  // A recipe is a named set of passives. The built-in ones come from data.json (tools/picker.py
+  // RECIPES, the same as the in-game panel); your own are kept in this browser.
+  let mine = [];
+  try { mine = JSON.parse(store.get("af-recipes") || "[]").filter((r) => r && r.name && Array.isArray(r.passives)); } catch (e) { mine = []; }
+  const saveMine = () => store.set("af-recipes", JSON.stringify(mine));
+  const allRecipes = () => [...(data.recipes || []).map((r) => ({ ...r, own: false })), ...mine.map((r) => ({ ...r, own: true }))];
+  let recSel = 0;
+
+  function renderRecipes() {
+    const list = allRecipes();
+    if (recSel >= list.length) recSel = Math.max(0, list.length - 1);
+    $("recSel").innerHTML = list.map((r, i) =>
+      `<option value="${i}"${i === recSel ? " selected" : ""}>${esc(r.name)}${r.own ? "  *" : ""} (${r.passives.length})</option>`).join("");
+    $("recDel").disabled = !list[recSel] || !list[recSel].own;
+    $("recBar").hidden = false;
+  }
+
+  function applyRecipe(r, only) {
+    const prof = state.profiles[active];
+    const ids = core.recipeIds(cat, r.passives).filter((id) => id !== prof.perk);
+    if (only) prof.enabled = [];
+    for (const id of ids) if (!prof.enabled.includes(id)) prof.enabled.push(id);
+    render();
+    toast((only ? "Stack is now " : "Added ") + r.name + ": " + ids.length + " passive(s)");
+  }
+
+  function uniqueRecipeName(base) {
+    const taken = new Set(allRecipes().map((r) => r.name.toLowerCase()));
+    let name = base, k = 1;
+    while (taken.has(name.toLowerCase())) name = base + " " + (++k);
+    return name;
+  }
+
+  function addPasted(text) {
+    const c = core.readCode(text);
+    if (!c) return toast("No recipe code found there");
+    if (c.kind === "stratagems") return toast("That is a stratagem preset. Paste it in the game panel (Stratagems tab)");
+    const known = core.recipeIds(cat, c.passives);
+    if (!known.length) return toast("None of that recipe's passives exist in this version");
+    mine.push({ name: uniqueRecipeName(c.name), passives: known.map((id) => nameOf(id)) });
+    saveMine(); recSel = allRecipes().length - 1;
+    renderRecipes();
+    toast("Added recipe " + mine[mine.length - 1].name);
+  }
+
+  function bindRecipes() {
+    $("recSel").addEventListener("change", (e) => { recSel = +e.target.value; renderRecipes(); });
+    $("recAdd").addEventListener("click", () => { const r = allRecipes()[recSel]; if (r) applyRecipe(r, false); });
+    $("recOnly").addEventListener("click", () => { const r = allRecipes()[recSel]; if (r) applyRecipe(r, true); });
+    $("recCopy").addEventListener("click", async () => {
+      const r = allRecipes()[recSel];
+      if (!r) return;
+      const code = core.recipeCode(r.name, r.passives);
+      try { await navigator.clipboard.writeText(code); toast("Code for " + r.name + " copied"); }
+      catch (e) { $("recPaste").value = code; $("recPaste").select(); toast("Copy the code from the box"); }
+    });
+    $("recSave").addEventListener("click", () => {
+      const prof = state.profiles[active];
+      const names = cat.list.filter((c) => prof.enabled.includes(c.id)).map((c) => c.name);
+      if (!names.length) return toast("Tick some passives first");
+      mine.push({ name: uniqueRecipeName("My recipe"), passives: names });
+      saveMine(); recSel = allRecipes().length - 1;
+      renderRecipes();
+      toast("Saved " + mine[mine.length - 1].name);
+    });
+    $("recDel").addEventListener("click", () => {
+      const r = allRecipes()[recSel];
+      if (!r || !r.own) return;
+      mine.splice(recSel - (data.recipes || []).length, 1);
+      saveMine(); renderRecipes(); toast("Deleted " + r.name);
+    });
+    $("recPaste").addEventListener("input", (e) => {
+      if (!core.readCode(e.target.value)) return;
+      addPasted(e.target.value); e.target.value = "";
+    });
   }
 
   // ---------------------------------------------------------------- one armor's weight
@@ -568,6 +647,7 @@
       $("presetSel").appendChild(o);
     }
     bind();
+    bindRecipes();
     state = blankState();
     const h = location.hash.match(/^#ini=(.+)$/);
     const saved = store.get("pp4-ini");

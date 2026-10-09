@@ -663,9 +663,86 @@ function PP.copy_code()
     return code
 end
 
+-- 7.1: one-line codes for a single recipe (AFR1:...) or stratagem preset (AFS1:...): the same base64url
+-- as above, over "Name|cell|cell". Paste code takes them on any tab. A saved loadout preset is copied
+-- as the usual web-builder link (the loadout code).
+function PP.item_code(tag, name, cells)
+    local parts = { (tostring(name):gsub('[|\r\n]', ' ')) }
+    for _, c in ipairs(cells) do parts[#parts + 1] = (tostring(c):gsub('[|\r\n]', ' ')) end
+    return tag .. ':' .. PP.b64(table.concat(parts, '|'))
+end
+
+function PP.read_item_code(clip)
+    local tag, code = clip:match('(AF[RS]1):([%w%-_]+)')
+    if not tag then return nil end
+    local raw = PP.unb64(code)
+    if not raw or raw == '' then return nil end
+    local parts = {}
+    for part in (raw .. '|'):gmatch('([^|]*)|') do parts[#parts + 1] = part:match('^%s*(.-)%s*$') end
+    return tag, parts
+end
+
+function PP.copy_text(text, done)
+    local ok = input.set_clipboard and input.set_clipboard(text)
+    say(ok and done or 'Could not use the clipboard', 4)
+    return ok
+end
+
+-- a name nobody else in `lists` has: "Name", "Name 2", ...
+function PP.unique_name(base, lists)
+    local taken = {}
+    for _, list in ipairs(lists) do
+        for _, e in ipairs(list) do taken[(e.name or e[1] or ''):lower()] = true end
+    end
+    local name, k = base, 1
+    while taken[name:lower()] do k = k + 1; name = base:sub(1, 24) .. ' ' .. k end
+    return name
+end
+
+function PP.paste_item(tag, parts)
+    local name = PP.clean_name(parts[1]) or 'Shared'
+    if tag == 'AFR1' then
+        if MOD.swap_only then say('Recipes are not in this edition', 4); return end
+        local list = {}
+        for k = 2, #parts do if parts[k] ~= '' then list[#list + 1] = parts[k] end end
+        if #list == 0 then say('That recipe code is empty', 4); return end
+        local entry = { name = name, passives = list }
+        if #PP.rec_ids(entry) == 0 then say('None of that recipe\'s passives are in this game build', 5); return end
+        PP.rec_entries()
+        entry.name = PP.unique_name(name, { PP.RECIPES_AS_ENTRIES(), PP.rec_user })
+        PP.rec_user[#PP.rec_user + 1] = entry
+        PP.save_recipes()
+        ui.rsel, ui.rpage = #PP.RECIPES + #PP.rec_user, 999
+        say('Added recipe "' .. entry.name .. '" (' .. #PP.rec_ids(entry) .. ' passives). Recipes row of any armor tab.', 5)
+    elseif tag == 'AFS1' then
+        if not PP.strat_on() then say('Stratagem presets are off (Keys tab)', 4); return end
+        if not PP.strat_user then PP.load_strat() end
+        local slots, any = {}, false
+        for k = 1, 4 do
+            local v = parts[k + 1]
+            slots[k] = (v and v ~= '' and v ~= '-') and v or false
+            any = any or slots[k] ~= false
+        end
+        if not any then say('That stratagem code is empty', 4); return end
+        local entry = { name = PP.unique_name(name, { PP.strat_user }), slots = slots }
+        PP.strat_user[#PP.strat_user + 1] = entry
+        PP.save_strat()
+        ui.ssel = #PP.strat_user
+        say('Added stratagem preset "' .. entry.name .. '". Stratagems tab.', 5)
+    end
+end
+
+function PP.RECIPES_AS_ENTRIES()
+    local out = {}
+    for _, r in ipairs(PP.RECIPES) do out[#out + 1] = { name = r[1] } end
+    return out
+end
+
 function PP.paste_code()
     local clip = input.get_clipboard and input.get_clipboard()
     if not clip or clip == '' then say('The clipboard is empty'); return end
+    local itag, iparts = PP.read_item_code(clip)
+    if itag then return PP.paste_item(itag, iparts) end
     local text
     if clip:find('%[[Pp]rofile') then
         text = clip
@@ -1009,6 +1086,68 @@ function PP.rec_apply(p, entry, only)
     end
     ui.sel = 'recipes'
     changed(p.perk, (only and 'Stack is now ' or 'Added ') .. entry.name .. ': ' .. n .. ' passive(s)')
+end
+
+-- 7.1 compare: what differs between two loadouts, as lines for the Presets tab:
+-- { kind = 'head' | 'row' | 'note', sign = '-' | '+' | '~', text }. "-" only in the first, "+" only in the second.
+function PP.diff_loadouts(la, lb)
+    local pa, pb, order = {}, {}, {}
+    for _, p in ipairs(la.profiles) do pa[p.perk] = p; order[#order + 1] = p.perk end
+    for _, p in ipairs(lb.profiles) do
+        pb[p.perk] = p
+        if not pa[p.perk] then order[#order + 1] = p.perk end
+    end
+    local out, same_all = {}, true
+    local function row(sign, text) out[#out + 1] = { kind = 'row', sign = sign, text = text } end
+    for _, perk in ipairs(order) do
+        local a, b = pa[perk], pb[perk]
+        local before = #out
+        out[#out + 1] = { kind = 'head', text = string.upper(CAT[perk].name) }
+        if not b then row('-', 'only in the first')
+        elseif not a then row('+', 'only in the second')
+        elseif MOD.swap_only then
+            if a.swap ~= b.swap then
+                local function nm(p) return (p.swap and CAT[p.swap] and p.swap ~= p.perk) and CAT[p.swap].name or 'its own passive' end
+                row('~', 'passive: ' .. nm(a) .. ' -> ' .. nm(b))
+            end
+        else
+            for _, c in ipairs(CAT_LIST) do
+                if c.id ~= perk then
+                    if a.enabled[c.id] and not b.enabled[c.id] then row('-', c.name)
+                    elseif b.enabled[c.id] and not a.enabled[c.id] then row('+', c.name) end
+                end
+            end
+            -- values: only for passives on in both (a passive on in one shows above)
+            local keys, seen = {}, {}
+            for _, p in ipairs({ a, b }) do
+                for k in pairs(p.tweaks) do if not seen[k] then seen[k] = true; keys[#keys + 1] = k end end
+            end
+            table.sort(keys)
+            for _, k in ipairs(keys) do
+                local pid, key = k:match('^(%d+)%.(.+)$')
+                pid = tonumber(pid)
+                local e = pid and CAT[pid] and CAT[pid].by_key[key]
+                local live = e and ((pid == perk) or (a.enabled[pid] and b.enabled[pid]))
+                if live then
+                    local va, vb = value_of(a, pid, e), value_of(b, pid, e)
+                    if math.abs(va - vb) > 1e-6 then
+                        row('~', CAT[pid].name .. ' ' .. key:gsub('_', ' ') .. ': ' .. PP.text(e, va) .. ' -> ' .. PP.text(e, vb))
+                    end
+                end
+            end
+            if a.conflicts ~= b.conflicts then
+                row('~', 'overlaps: ' .. (a.conflicts == 'strongest' and 'strongest only' or 'stack all') .. ' -> '
+                    .. (b.conflicts == 'strongest' and 'strongest only' or 'stack all'))
+            end
+            if a.weight ~= b.weight then
+                row('~', 'weight: ' .. (a.weight and WEIGHTS[a.weight] or 'game') .. ' -> ' .. (b.weight and WEIGHTS[b.weight] or 'game'))
+            end
+        end
+        if #out == before + 1 then out[#out] = nil
+        else same_all = false end
+    end
+    if same_all then out[#out + 1] = { kind = 'note', text = 'These two are the same.' } end
+    return out
 end
 
 -- the list shown in the Presets tab: { kind = 'installed' | 'builtin' | 'user', i, name }
@@ -2082,7 +2221,45 @@ local function draw(width, height)
             head(RX, TOP + 14, entry.kind == 'installed' and 'Installed build' or entry.kind == 'builtin' and 'Standard issue' or 'Your loadout',
                  entry.name, RIW)
             local y2 = TOP + 66
-            for _, sm in ipairs(PP.summary(l)) do
+            local cmp_b, cmp_name
+            if ui.cmp and ui.cmp.b then
+                if ui.cmp.b == 'current' then cmp_b, cmp_name = LOADOUT, MOD.swap_only and 'your swaps now' or 'your stack now'
+                else
+                    for _, e in ipairs(list) do
+                        if e.kind == ui.cmp.b.kind and e.i == ui.cmp.b.i then cmp_b, cmp_name = PP.loadout_of(e), e.name end
+                    end
+                end
+            end
+            if cmp_b and l then
+                local lines = PP.diff_loadouts(l, cmp_b)
+                text('-', RX + 8, y2, 14, C.BAD); text('only in ' .. entry.name, RX + 28, y2 + 1, 13, C.MUTED, RIW - 36)
+                text('+', RX + 8, y2 + 20, 14, C.GOOD); text('only in ' .. cmp_name, RX + 28, y2 + 21, 13, C.MUTED, RIW - 36)
+                text('~', RX + 8, y2 + 40, 14, C.YELLOW); text('a different value', RX + 28, y2 + 41, 13, C.MUTED, RIW - 36)
+                y2 = y2 + 72
+                rect(RX, y2 - 6, RIW, 1, C.LINE, 951)
+                local fit = math.max(3, math.floor((BOT - 112 - y2) / 21))
+                local pages = math.max(1, math.ceil(#lines / fit))
+                ui.cpage = math.max(0, math.min(ui.cpage or 0, pages - 1))
+                for k = ui.cpage * fit + 1, math.min(#lines, ui.cpage * fit + fit) do
+                    local ln = lines[k]
+                    if ln.kind == 'head' then
+                        text(ln.text .. ' ARMOR', RX, y2 + 3, 13, C.YELLOW, RIW)
+                    elseif ln.kind == 'row' then
+                        text(ln.sign, RX + 8, y2 + 3, 14, ln.sign == '-' and C.BAD or ln.sign == '+' and C.GOOD or C.YELLOW)
+                        text(ln.text, RX + 28, y2 + 4, 13, C.TEXT, RIW - 36)
+                    else text(ln.text, RX, y2 + 4, 13, C.MUTED, RIW) end
+                    y2 = y2 + 21
+                end
+                local by = BOT - 96
+                rect(RX, by - 12, RIW, 1, C.LINE, 951)
+                local bx = RX + button('pcmpend', 'Done comparing', RX, by, nil, 34, true, true) + 8
+                bx = bx + button('cpage:-1', '<', bx, by, 36, 34, ui.cpage > 0) + 6
+                text((ui.cpage + 1) .. '/' .. pages, bx + 12, by + 10, 12, C.MUTED, 40, 'center')
+                button('cpage:1', '>', bx + 46, by, 36, 34, ui.cpage < pages - 1)
+                l = nil
+                y2 = nil
+            end
+            for _, sm in ipairs(y2 and PP.summary(l) or {}) do
                 rect(RX, y2, RIW, 1, C.LINE, 951)
                 text(up(sm.armor .. ' armor'), RX, y2 + 10, 14, C.YELLOW, RIW)
                 text(MOD.swap_only and (sm.swap and ('has ' .. sm.swap) or 'its own passive') or
@@ -2098,10 +2275,18 @@ local function draw(width, height)
                     if i == #sm.names then text(line, RX + 8, y2, 13, C.DIM, RIW - 10); y2 = y2 + 18 end
                 end
                 y2 = y2 + 12
-                if y2 > BOT - 150 then break end
+                if y2 > BOT - 192 then break end
             end
             local by = BOT - 96
+            if not cmp_b then
             rect(RX, by - 12, RIW, 1, C.LINE, 951)
+            do
+                local cx = RX
+                cx = cx + button('pcopy', 'Copy code', cx, by - 46, nil, 32, l ~= nil) + 8
+                local picking = ui.cmp and ui.cmp.picking
+                cx = cx + button('pcmp', picking and 'Cancel compare' or 'Compare with...', cx, by - 46, nil, 32, true, picking) + 8
+                button('pcmpnow', MOD.swap_only and 'Compare with my swaps now' or 'Compare with my stack now', cx, by - 46, nil, 32, true)
+            end
             local bx = RX
             bx = bx + button('pload', 'Load this preset', bx, by, nil, 34, l ~= nil, true) + 8
             if entry.kind == 'user' then
@@ -2111,8 +2296,10 @@ local function draw(width, height)
                 button('pdel', sure == 'pdel' and 'Click again' or 'Delete', bx, by, nil, 34, true, false, sure == 'pdel' and C.BAD or nil)
             end
             if ui.naming then text('Type a name, Enter to keep it, Esc to cancel.', RX, by + 46, 13, C.YELLOW, RIW)
+            elseif ui.cmp and ui.cmp.picking then text('Click another preset on the left to compare with it.', RX, by + 46, 13, C.YELLOW, RIW)
             else text(MOD.swap_only and 'Loading replaces your current swaps (Undo brings them back).'
                       or 'Loading replaces your current stacks (Undo brings them back).', RX, by + 46, 12, C.DIM, RIW) end
+            end
         end
 
     -- ============================================================ Stratagems (presets for the loadout screen)
@@ -2191,13 +2378,16 @@ local function draw(width, height)
             bx = bx + button('sover', sure == 'sover' and 'Click again' or 'Save current here', bx, by - 42, nil, 34, ui.strat_now ~= nil) + 8
             bx = bx + button('sren', 'Rename', bx, by - 42, nil, 34, true) + 8
             button('sdel', sure == 'sdel' and 'Click again' or 'Delete', bx, by - 42, nil, 34, true, false, sure == 'sdel' and C.BAD or nil)
-            button('sskip', entry.skip and 'Left out of the quick-swap key: put back' or 'In the quick-swap key: leave out',
-                   RX, by, nil, 34, true)
+            local kx2 = RX + button('sskip', entry.skip and 'Put back in the quick-swap key' or 'Leave out of the quick-swap key',
+                                    RX, by, nil, 34, true) + 8
+            kx2 = kx2 + button('scopy', 'Copy code', kx2, by, nil, 34, true) + 8
+            button('paste', 'Paste code', kx2, by, nil, 34, true)
             if ui.naming and ui.naming.strat then text('Type a name, Enter to keep it, Esc to cancel.', RX, by + 46, 13, C.YELLOW, RIW)
             else text('Only stratagems you have unlocked are put in. Not while you are ready.', RX, by + 46, 12, C.DIM, RIW) end
         else
             y2 = wrap('Pick four stratagems on the loadout screen, then "+ Save current loadout". Click a saved one to put it back.',
                       RX, y2, 13, C.MUTED, RIW, 3)
+            button('paste', 'Paste code', RX, y2 + 10, nil, 34, true)
         end
         local rep = STRAT.report()
         if STRAT.state ~= 'ready' and STRAT.state ~= 'idle' then text(rep[1], RX, BOT - 24, 11, C.DIM, RIW) end
@@ -2721,7 +2911,8 @@ local function draw(width, height)
             end
             local sel_e = entries[ui.rsel]
             local ay = by0 - 40
-            button('rsave', '+ Save ticked passives as recipe', RX, ay - 42, RIW, 32, n_on > 0)
+            button('rsave', '+ Save ticked passives as recipe', RX, ay - 42, RIW - 112, 32, n_on > 0)
+            button('paste', 'Paste code', RX + RIW - 104, ay - 42, 104, 32, true)
             if sel_e then
                 local names, base_in = {}, false
                 for _, id in ipairs(PP.rec_ids(sel_e)) do
@@ -2736,8 +2927,9 @@ local function draw(width, height)
                 if sel_e.kind == 'user' then
                     ax = ax + button('rname', 'Rename', ax, ay, nil, 32, true) + 8
                     local sure = ui.confirm and ui.confirm.kind == 'rdel'
-                    button('rdel', sure and 'Click again' or 'Delete', ax, ay, nil, 32, true, false, sure and C.BAD or nil)
+                    ax = ax + button('rdel', sure and 'Click again' or 'Delete', ax, ay, nil, 32, true, false, sure and C.BAD or nil) + 8
                 end
+                button('rcopy', 'Copy code', ax, ay, nil, 32, true)
             end
         elseif ui.sel == 'summary' then
             local list = PP.summary_rows(p)
@@ -2877,7 +3069,7 @@ local function click(key)
     if kind == 'tab' and n then ui.tab, ui.sel, ui.adding, ui.presets, ui.settings = n, nil, false, false, false
     elseif kind == 'add' then ui.adding, ui.presets, ui.settings = not ui.adding, false, false
     elseif kind == 'addcancel' then ui.adding = false
-    elseif kind == 'presets' then ui.presets, ui.adding, ui.settings = not ui.presets, false, false; PP.load_user()
+    elseif kind == 'presets' then ui.presets, ui.adding, ui.settings = not ui.presets, false, false; ui.cmp = nil; PP.load_user()
     elseif kind == 'search' then
         if arg == 'clear' then PP.set_search('', false) else PP.set_search(ui.search, true) end
     elseif kind == 'settings' then ui.settings, ui.adding, ui.presets = ui.settings ~= 'keys' and 'keys' or false, false, false
@@ -3054,6 +3246,32 @@ local function click(key)
             ui.naming, ui.ssel = nil, nil
             say('Deleted "' .. gone.name .. '"')
         end
+    elseif kind == 'scopy' and ui.ssel and PP.strat_user[ui.ssel] then
+        local e = PP.strat_user[ui.ssel]
+        local cells = {}
+        for k = 1, 4 do cells[k] = e.slots[k] or '-' end
+        PP.copy_text(PP.item_code('AFS1', e.name, cells), 'Code for "' .. e.name .. '" copied. A friend pastes it with Paste code.')
+    elseif kind == 'rcopy' then
+        local e = PP.rec_entries()[ui.rsel or 1]
+        if e then PP.copy_text(PP.item_code('AFR1', e.name, e.passives), 'Code for "' .. e.name .. '" copied. A friend pastes it with Paste code.') end
+    elseif kind == 'pcopy' and ui.psel then
+        for _, e in ipairs(PP.entries()) do
+            if e.kind == ui.psel.kind and e.i == ui.psel.i then
+                local l = PP.loadout_of(e)
+                if l then
+                    PP.copy_text(PP.SITE .. PP.b64(PP.compact(l)), 'Code for "' .. e.name .. '" copied: web builder link, or Paste code')
+                end
+                break
+            end
+        end
+    elseif kind == 'pcmp' and ui.psel then
+        ui.cmp = ui.cmp and ui.cmp.picking and nil or { picking = true }
+        ui.version = ui.version + 1
+    elseif kind == 'pcmpnow' and ui.psel then
+        ui.cmp, ui.cpage = { b = 'current' }, 0
+    elseif kind == 'pcmpend' then
+        ui.cmp, ui.cpage = nil, 0
+    elseif kind == 'cpage' and n then ui.cpage = math.max(0, (ui.cpage or 0) + n)
     -- recipes
     elseif kind == 'rpick' and n then ui.rsel = n
     elseif kind == 'rpage' and n then ui.rpage = (ui.rpage or 0) + n
@@ -3088,7 +3306,13 @@ local function click(key)
             say('Deleted "' .. e.name .. '"')
         end
     -- presets
+    elseif kind == 'pre' and ui.cmp and ui.cmp.picking and ui.psel then
+        local k, i = arg:match('^(%a+):(%d+)$')
+        if k == ui.psel.kind and tonumber(i) == ui.psel.i then say('Pick a different preset to compare with')
+        else ui.cmp, ui.cpage = { b = { kind = k, i = tonumber(i) } }, 0 end
+        ui.version = ui.version + 1
     elseif kind == 'pre' then
+        ui.cmp = nil
         local k, i = arg:match('^(%a+):(%d+)$')
         ui.psel = { kind = k, i = tonumber(i) }
         if ui.naming and not (k == 'user' and ui.naming.i == tonumber(i)) then finish_naming(true) end

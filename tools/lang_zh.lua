@@ -11,6 +11,26 @@ LANGS.zh = {
     name = '简体中文',
     credit = 'hd2modpj',
     ui = {
+        -- 7.1: share codes, compare view
+        ['Compare with...'] = '与…比较',
+        ['Cancel compare'] = '取消比较',
+        ['Done comparing'] = '完成比较',
+        ['Compare with my stack now'] = '与我当前的堆叠比较',
+        ['Compare with my swaps now'] = '与我当前的替换比较',
+        ['Click another preset on the left to compare with it.'] = '点击左侧另一个预设来进行比较。',
+        ['Pick a different preset to compare with'] = '请选择另一个预设来比较',
+        ['These two are the same.'] = '这两个完全相同。',
+        ['Leave out of the quick-swap key'] = '不加入快速切换键',
+        ['Put back in the quick-swap key'] = '重新加入快速切换键',
+        ['Recipes are not in this edition'] = '此版本没有配方功能',
+        ['That recipe code is empty'] = '该配方代码是空的',
+        ['That stratagem code is empty'] = '该战略配备代码是空的',
+        ['Stratagem presets are off (Keys tab)'] = '战略配备预设已关闭（按键页）',
+        ['only in the first'] = '仅在第一个中',
+        ['only in the second'] = '仅在第二个中',
+        ['a different value'] = '数值不同',
+        ['strongest only'] = '仅取最强',
+        ['stack all'] = '全部叠加',
         -- 顶栏
         ['MINISTRY OF DEFENSE']        = '国防部',
         ['SUPER EARTH ARMORY FORGE']   = '超级地球军械工坊',
@@ -296,6 +316,16 @@ LANGS.zh = {
     -- { Lua pattern, 替换 }；^...$ 锚定整句。面板会把标签转成大写，所以同一句会同时
     -- 登记原文和全大写两份。
     pat = {
+        -- 7.1
+        { '^only in (.+)$', '仅在 %1 中' },
+        { '^passive: (.+) %-> (.+)$', '被动：%1 -> %2' },
+        { '^overlaps: (.+) %-> (.+)$', '重叠：%1 -> %2' },
+        { '^weight: (.+) %-> (.+)$', '重量：%1 -> %2' },
+        { '^Code for "(.+)" copied%. A friend pastes it with Paste code%.$', '已复制“%1”的代码。朋友用“粘贴代码”即可导入。' },
+        { '^Code for "(.+)" copied: web builder link, or Paste code$', '已复制“%1”的代码：网页生成器链接，或用“粘贴代码”。' },
+        { '^Added recipe "(.+)" %((%d+) passives%)%. Recipes row of any armor tab%.$', '已添加配方“%1”（%2 个被动）。见任意护甲页的配方行。' },
+        { '^Added stratagem preset "(.+)"%. Stratagems tab%.$', '已添加战略配备预设“%1”。见战略配备页。' },
+        { '^None of that recipe\'s passives are in this game build$', '该配方的被动在此游戏版本中都不存在' },
         -- 6.2.1: Every armor
         { '^(.+)  %-  ANY ARMOR YOU WEAR$',                  '%1  -  你穿的任何护甲' },
         { '^(.+)  %-  YOUR ARMOR$',                          '%1  -  你的护甲' },

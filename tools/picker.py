@@ -1025,6 +1025,17 @@ def lang_names(path=LANG_ZH):
     return out
 
 
+# Built-in recipes: named sets of passives. Must equal PP.RECIPES in tools/panel.lua
+# (tests/test_codes_compare.py checks it). The web builder reads them from data.json.
+RECIPES = [
+    ("Medic Tank", ["Fortified", "Unflinching", "Extra Padding", "Supplemental Adrenaline"]),
+    ("Ghost", ["Scout", "Reduced Signature", "Feet First"]),
+    ("Demolitionist", ["Engineering Kit", "Integrated Explosives", "Blunt-Force Mitigation"]),
+    ("Gunner", ["Siege-Ready", "Gunslinger", "Rock-Solid"]),
+    ("Survivor", ["Inflammable", "Advanced Filtration", "Acclimated", "Peak Physique"]),
+]
+
+
 def cmd_export_web(args):
     """Write docs/data.json: catalog, effect names, engine and presets for the web builder."""
     root = os.path.dirname(HERE)
@@ -1039,6 +1050,7 @@ def cmd_export_web(args):
         "effects": {str(k): list(v) for k, v in EFFECTS.items()},
         "stat_effects": {str(k): list(v) for k, v in STAT_EFFECTS.items()},
         "aliases": ALIASES,
+        "recipes": [{"name": n, "passives": list(ps)} for n, ps in RECIPES],
         "armors": armor_list(),
         "engine": engine_text(),
         "lang": {"zh": lang_names(), "ja": lang_names(LANG_JA)},

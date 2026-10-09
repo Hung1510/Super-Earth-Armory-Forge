@@ -13,6 +13,26 @@ LANGS.ja = {
     name = '日本語',
     credit = 'Armory Forge',
     ui = {
+        -- 7.1: share codes, compare view
+        ['Compare with...'] = '比較する…',
+        ['Cancel compare'] = '比較をやめる',
+        ['Done comparing'] = '比較を終了',
+        ['Compare with my stack now'] = '現在のスタックと比較',
+        ['Compare with my swaps now'] = '現在のスワップと比較',
+        ['Click another preset on the left to compare with it.'] = '左の別のプリセットをクリックして比較します。',
+        ['Pick a different preset to compare with'] = '比較する別のプリセットを選んでください',
+        ['These two are the same.'] = 'この2つは同じです。',
+        ['Leave out of the quick-swap key'] = 'クイック切替キーから外す',
+        ['Put back in the quick-swap key'] = 'クイック切替キーに戻す',
+        ['Recipes are not in this edition'] = 'このエディションにレシピはありません',
+        ['That recipe code is empty'] = 'そのレシピコードは空です',
+        ['That stratagem code is empty'] = 'そのストラタジェムコードは空です',
+        ['Stratagem presets are off (Keys tab)'] = 'ストラタジェムプリセットはオフです（キータブ）',
+        ['only in the first'] = '1つ目だけにあります',
+        ['only in the second'] = '2つ目だけにあります',
+        ['a different value'] = '値が異なる',
+        ['strongest only'] = '最強のみ',
+        ['stack all'] = 'すべて重ねる',
         -- 上部バー
         ['MINISTRY OF DEFENSE']        = '国防省',
         ['SUPER EARTH ARMORY FORGE']   = 'スーパーアース兵器工廠',
@@ -298,6 +318,16 @@ LANGS.ja = {
     -- { Luaパターン, 置換 }。^...$ で文全体に一致させます。パネルはラベルを大文字にするので、
     -- 同じ文が原文と全大文字の両方に登録されます。
     pat = {
+        -- 7.1
+        { '^only in (.+)$', '%1 だけにあります' },
+        { '^passive: (.+) %-> (.+)$', 'パッシブ：%1 -> %2' },
+        { '^overlaps: (.+) %-> (.+)$', '重複：%1 -> %2' },
+        { '^weight: (.+) %-> (.+)$', '重量：%1 -> %2' },
+        { '^Code for "(.+)" copied%. A friend pastes it with Paste code%.$', '「%1」のコードをコピーしました。友達は「コードを貼り付け」で取り込めます。' },
+        { '^Code for "(.+)" copied: web builder link, or Paste code$', '「%1」のコードをコピーしました：Web版ビルダーのリンク、または「コードを貼り付け」。' },
+        { '^Added recipe "(.+)" %((%d+) passives%)%. Recipes row of any armor tab%.$', 'レシピ「%1」を追加しました（パッシブ%2件）。アーマータブのレシピ欄にあります。' },
+        { '^Added stratagem preset "(.+)"%. Stratagems tab%.$', 'ストラタジェムプリセット「%1」を追加しました。ストラタジェムタブにあります。' },
+        { '^None of that recipe\'s passives are in this game build$', 'このレシピのパッシブはこのゲームバージョンにありません' },
         -- 6.2.1: 全アーマー
         { '^(.+)  %-  ANY ARMOR YOU WEAR$',                  '%1  -  着ているすべてのアーマー' },
         { '^(.+)  %-  YOUR ARMOR$',                          '%1  -  あなたのアーマー' },

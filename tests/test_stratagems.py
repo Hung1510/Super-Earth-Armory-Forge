@@ -529,6 +529,35 @@ r2.g.click("stratfeat:on")
 r2.g.tick(10)
 check("strat" in r2.g.regions() and "stratagems = on" in open(kf).read(), "On: the tab is back")
 
+
+# ------------------------------------------------------------------ 7. stratagem preset codes
+import base64  # noqa: E402
+
+t1 = with_presets()
+t1.g.key(F7)
+t1.g.tick(150)
+t1.g.click("strat")
+t1.g.tick(30)
+t1.g.click("sp:2")
+t1.g.click("scopy")
+scode = t1.g.clipboard() or ""
+check(scode.startswith("AFS1:") and " " not in scode, "Copy code on a stratagem preset gives a one-line AFS1: code (%r)" % scode[:12])
+raw = base64.urlsafe_b64decode(scode[5:] + "=" * (-len(scode[5:]) % 4)).decode()
+check(raw == "B|Shield_Generator_Pack|-|-|-", "it holds the name and the four slots (%r)" % raw)
+t2 = with_presets(text="; none\n")
+t2.g.key(F7)
+t2.g.tick(150)
+t2.g.clipboard("here: " + scode)
+t2.g.click("strat")
+t2.g.tick(30)
+check("paste" in t2.g.regions(), "the Stratagems tab has Paste code, also with nothing saved yet")
+t2.g.click("paste")
+check("B | Shield_Generator_Pack | - | - | -" in (t2.file() or ""), "Paste code adds the preset (%r)" % (t2.file() or "")[-60:])
+check(not layout_problems(t2.g), "the tab with Copy / Paste fits (%s)" % layout_problems(t2.g)[:3])
+t2.g.clipboard(scode)
+t2.g.click("paste")
+check((t2.file() or "").count("B 2 |") == 1, "pasting it again keeps both, the second named 'B 2'")
+
 if failed:
     print("\n%d FAILED" % len(failed))
     sys.exit(1)

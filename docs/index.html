@@ -104,6 +104,9 @@ button, input, select { font: inherit; color: inherit; }
 .guide .hint { margin: 14px 0 0; }
 @media (max-width: 900px) { .guide .cols { grid-template-columns: 1fr; } }
 .tabline { display: none; }
+.recbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px 18px 0; }
+.recbar .recbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.recbar #recPaste { flex-basis: 100%; }
 
 /* ------------------------------------------------ panels with a cut corner */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; padding-bottom: 30px; }
@@ -349,6 +352,18 @@ footer a { color: var(--muted); }
           </div>
         </div>
         <div class="tabline"></div>
+        <div class="recbar" id="recBar">
+          <div class="field grow"><label for="recSel">Recipes</label>
+            <select id="recSel"></select></div>
+          <div class="recbtns">
+            <button class="btn small" id="recAdd" type="button" title="Tick this recipe's passives on top of the stack">Add to stack</button>
+            <button class="btn small" id="recOnly" type="button" title="Make the stack just this recipe">Only this</button>
+            <button class="btn small" id="recCopy" type="button" title="One line to paste into Discord or the game panel">Copy code</button>
+            <button class="btn small" id="recSave" type="button" title="Keep the ticked passives as your own recipe">Save ticked as recipe</button>
+            <button class="btn small" id="recDel" type="button">Delete</button>
+          </div>
+          <input type="text" id="recPaste" class="grow" placeholder="Paste a recipe code (AFR1:...) here" aria-label="Recipe code" autocomplete="off" spellcheck="false">
+        </div>
         <div class="pb" id="profileBody"></div>
       </section>
     </div>

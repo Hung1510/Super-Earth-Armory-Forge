@@ -701,7 +701,42 @@
     return state;
   }
 
+  // ------------------------------------------------------------------ recipes
+  // A recipe is a name and passive names. A share code is "AFR1:" + base64url("Name|Passive|...")
+  // (the same code the in-game panel copies and pastes).
+  function b64u(s) {
+    const bytes = new TextEncoder().encode(s);
+    let bin = "";
+    bytes.forEach((b) => (bin += String.fromCharCode(b)));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function unb64u(s) {
+    const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+  }
+  function recipeCode(name, passives) {
+    const clean = (t) => String(t).replace(/[|\r\n]/g, " ");
+    return "AFR1:" + b64u([name, ...passives].map(clean).join("|"));
+  }
+  // -> { kind: "recipe", name, passives } | { kind: "stratagems", name } | null
+  function readCode(text) {
+    const m = /(AF[RS]1):([\w-]+)/.exec(text || "");
+    if (!m) return null;
+    let parts;
+    try { parts = unb64u(m[2]).split("|").map((x) => x.trim()); } catch (e) { return null; }
+    if (!parts[0]) return null;
+    if (m[1] === "AFS1") return { kind: "stratagems", name: parts[0] };
+    const passives = parts.slice(1).filter(Boolean);
+    return passives.length ? { kind: "recipe", name: parts[0], passives } : null;
+  }
+  // passive ids a recipe names that this catalog knows, in catalog order (what the panel does)
+  function recipeIds(cat, passives) {
+    const want = new Set(passives.map((n) => String(n).toLowerCase()));
+    return cat.list.filter((c) => want.has(c.name.toLowerCase())).map((c) => c.id);
+  }
+
   return {
+    recipeCode, readCode, recipeIds,
     ConfigError, TYPE_NAMES, WEIGHT_NAMES, ARCHIVE_NAME, EVERY, makeCatalog, effectsOf, findPerk, parseIni,
     loadConfigText, generateLua, archiveFor, resourceHash, describeProfiles, manifestFor,
     serializeIni, stateFromText, pyRepr, fmtG, luaNum, howToEdit, compactIni,
