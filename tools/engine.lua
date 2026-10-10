@@ -1215,6 +1215,9 @@ end
 -- most WEAR_FULL_MAX times a session, and only while the panel is open (it is the only
 -- thing that shows what you wear).
 local WEAR_BUDGET, WEAR_FULL_MAX = 0.001, 3
+-- 7.2: the budget is checked after each chunk, so a 1 MB chunk overshot it by the time of one whole
+-- chunk in a frame; 256 KB chunks keep a frame within about the budget, and as many fit as the budget allows
+local WEAR_CHUNK = 262144
 KITS.wear = { state = 'idle', spots = {}, tries = 0, full = 0 }
 
 -- Sweeping the whole address space (VirtualQuery in a loop, then a sort) takes a few ms:
@@ -1316,7 +1319,7 @@ function KITS.wear_tick(now)
             end
             if W.cursor >= r.size then W.idx, W.cursor = W.idx + 1, 0
             else
-                local take = math.min(1048576, r.size - W.cursor)
+                local take = math.min(WEAR_CHUNK, r.size - W.cursor)
                 pcall(wear_chunk, r.base + W.cursor, take)
                 W.cursor = W.cursor + take
             end

@@ -114,6 +114,9 @@ function Scan:accept(sig, rva)
     return true
 end
 
+-- 7.2: 512 KB per step (was 2 MB, a 2 MB Lua string in one frame); S.tick runs as many steps as fit in about 1.5 ms
+local SEARCH_CHUNK = 524288
+
 -- true: all found at the known addresses. false: search needed (self.queue is set).
 function Scan:start()
     local lost = {}
@@ -129,8 +132,8 @@ function Scan:start()
     for _, s in ipairs(self.sections) do
         local at = s.rva
         while at < s.rva + s.size do
-            self.queue[#self.queue + 1] = { at, math.min(2097152 + 256, s.rva + s.size - at) }
-            at = at + 2097152
+            self.queue[#self.queue + 1] = { at, math.min(SEARCH_CHUNK + 256, s.rva + s.size - at) }
+            at = at + SEARCH_CHUNK
         end
     end
     self.hits = {}
@@ -280,9 +283,12 @@ end
 function S.tick()
     S.frames = S.frames + 1
     if S.state == 'searching' then
-        local ok, done = pcall(scan.step, scan)
-        if not ok then S.state, S.why = 'off', tostring(done); return end
-        if done then finish_scan() end
+        local deadline = api.now() + 0.0015
+        repeat
+            local ok, done = pcall(scan.step, scan)
+            if not ok then S.state, S.why = 'off', tostring(done); return end
+            if done then finish_scan(); return end
+        until api.now() >= deadline
     end
 end
 

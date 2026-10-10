@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.2.1 (2026-10-10)
+Both editions (full and Passive Swap):
+- **Smoother frames while it searches:** the search for what you wear read 1 MB at a time and only then checked its time budget, so a frame could run over by the time of a whole 1 MB read. It now reads 256 KB at a time (as many as fit in the same 1 ms), so no frame carries a big read. The search for the game's stratagem code (full edition) read 2 MB into a Lua string per frame; it now reads 512 KB at a time up to about 1.5 ms a frame, so it finishes just as fast with no single large allocation.
+- **Fewer Windows calls every frame:** with the panel closed the mod used to ask Windows whether the game window is in front three times a frame (two system calls each), even with no key pressed. It now asks only when a hotkey is pressed. With the panel open it asks once a frame instead of up to seven times.
+
 ## 7.2 (2026-10-09)
 Web builder (the mods themselves are unchanged from 7.1):
 - **Compare my build with...:** pick any built-in preset and the page lists what differs from your build, armor by armor: passives only in one of them, changed values, overlap policy, weight, and whether the armor's own passive is kept. It updates as you edit. The same view is in the game panel since 7.1.

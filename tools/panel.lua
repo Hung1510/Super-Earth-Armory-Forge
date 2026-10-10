@@ -4166,9 +4166,10 @@ local function hotkey_pressed(name)
     local down = input.key_down(vk)
     local was = keys_was[name]
     keys_was[name] = down
+    if not down or was then return false end         -- 7.2: only a fresh press asks whether the game is in front
     local focused = input.focused()
-    if down and not was and name == hotkey() then PP.note(focused and 'presses' or 'unfocused') end
-    return down and not was and focused
+    if name == hotkey() then PP.note(focused and 'presses' or 'unfocused') end
+    return focused
 end
 
 -- 6.3: loadout.ini edited on disk while the game runs (deleted stacks, a web-builder file
@@ -4267,6 +4268,15 @@ setup_panel = function()
     local ok, built = pcall(function() return rawget(_G, 'PP_TEST_INPUT') or build_input() end)
     if not ok then log('panel: input unavailable: ' .. tostring(built)); return end
     input = built
+    -- 7.2: "is the game window in front" is two Windows calls and was asked up to 7 times a frame (once
+    -- per hotkey, per mouse read ...); ask once per frame. The answer cannot change inside one frame.
+    local ask_focus, at_frame, last_focus = built.focused, -1, false
+    if ask_focus then
+        built.focused = function()
+            if state.frame ~= at_frame then at_frame, last_focus = state.frame, ask_focus(); PP.focus_asks = (PP.focus_asks or 0) + 1 end
+            return last_focus
+        end
+    end
     state.ui = ui
     state.pp = PP
     state.report = PP.report
