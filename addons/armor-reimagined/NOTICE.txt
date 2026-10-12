@@ -1,0 +1,10 @@
+Armor Reimagined 1.1.2 by waitiufrikks - https://ayakamods.com/mods/armor-reimagined.4895/
+
+The zip next to this file is his mod, unchanged (SHA-256 in SHA256.txt), offered as an optional
+add-on download with Super Earth Armory Forge. Armory Forge's own files are not changed by it.
+
+Permission: asked by Hung1510 by e-mail on 2026-10-13 to ship it unchanged as an optional add-on
+download; waitiufrikks replied: "Yes feel free, no need to credit me." Credit is given anyway.
+
+It is a separate mod: install it from its own zip (it needs Bingus Shared Loader, like Armory Forge, and
+should stay at the bottom of the mod list). It is his work; questions and bugs go to his page.

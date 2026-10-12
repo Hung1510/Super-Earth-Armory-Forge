@@ -29,7 +29,7 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 - **Requires:** [Bingus Shared Loader](https://ayakamods.com/mods/bingus-shared-loader.3861/)
 - **Single-player / private lobbies only.** Don't use it in public matchmaking.
 - Download: [AyakaMods](https://ayakamods.com/mods/super-earth-armory-forge.4359/) · [GitHub Releases](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest) (full edition) · [Nexus Mods: Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789) (Passive Swap edition)
-- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v7.3.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v7.3.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
+- **Two editions:** the **full edition** (`Super-Earth-Armory-Forge-v7.3.1.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v7.3.1.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other.
 - **Support:** the mod is free and always will be. If it's worth a coffee to you, **[tip on Ko-fi](https://ko-fi.com/phamtrangiahung)**. I'd really appreciate it, and it helps me keep updating the mod.
 
 ## Ways to use it
@@ -78,6 +78,7 @@ Then:
 - **When two passives change the same thing:** *Stack all* or *Strongest only* (new stacks start on *Strongest only*).
 - **Every armor:** *+ Armor* → *Every armor* is one stack that follows you to any armor you wear, so you can change armor and keep the same passives and weight. Keep the armor's own passive or turn it off. A passive with its own tab still uses that tab. Full edition only.
 - Every change applies at once and is saved to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\loadout.ini`, the same format as the web builder, so you can import it there to share. Installing a web-builder build starts fresh from that build; the release zip always keeps what you made.
+- **Armor Reimagined (optional download):** waitiufrikks' separate mod, attached to each release unchanged and with his permission: light, medium and heavy armor get their own protection by body region, melee reduction, speed and ergonomics. It runs next to Armory Forge. [His page](https://ayakamods.com/mods/armor-reimagined.4895/).
 - **Armor Roles (optional download):** `Super-Earth-Armory-Forge-Armor-Roles-vX.zip` on the releases page: three `.ini` loadouts (Light, Medium, Heavy role) that give each weight class a trade-off, using the Every armor stack. Paste one with **Paste code** or import it in the web builder. The idea is from *Armor Reimagined* by waitiufrikks. Full edition only.
 - **Recipes:** the **RECIPES** row in an armor tab. A named set of passives (*Medic Tank*, *Ghost*...) that ticks them all in one click, with **Undo**. Save your own from what is ticked; kept in `ArmoryForge\my-recipes.txt`. **Copy code** / **Paste code** share one recipe as a line of text. The web builder has the same recipes. Full edition only.
 - **Stratagems tab:** on the Hellpod loadout screen (before a mission), **+ Save current loadout** keeps your four stratagems as a named preset, and **Apply to loadout** puts them back with one click. Only stratagems you have unlocked are put in, and not while you are ready. **F10** (rebindable on the tab) puts on the next preset without opening the panel, **Shift F10** the one before; presets can be reordered, duplicated, left out of the key, and the last apply can be undone. Don't want it? Keys tab → *Stratagem presets* → Off removes the tab and key and nothing of it runs. Saved in `ArmoryForge\my-stratagems.txt`. It finds the game's loadout code the same way [Flexible Stratagems](https://github.com/Alomare/FlexibleStratagems) by Alomare does (thanks); nothing runs until you open the tab or press the key, and if the game's code changed it turns itself off. Full edition only.
@@ -144,7 +145,7 @@ pip install lupa                                   # optional: Lua syntax check
 python tools\picker.py list                        # every passive, effect, default
 python tools\picker.py build loadout.ini           # preview
 python tools\picker.py build loadout.ini --zip "My Stack.zip"
-python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v7.3.zip   # the release zip (CI names it after the tag)
+python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v7.3.1.zip   # the release zip (CI names it after the tag)
 ```
 
 The web builder can import and export the same `loadout.ini`.

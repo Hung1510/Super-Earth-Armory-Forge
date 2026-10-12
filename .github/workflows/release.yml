@@ -36,3 +36,4 @@ jobs:
             dist/Super-Earth-Armory-Forge-${{ github.ref_name }}.zip
             dist/Super-Earth-Armory-Forge-Passive-Swap-${{ github.ref_name }}.zip
             dist/Super-Earth-Armory-Forge-Armor-Roles-${{ github.ref_name }}.zip
+            addons/armor-reimagined/Helldivers-Armor-Reimagined-1.1.2.zip
