@@ -1,7 +1,7 @@
 Super Earth Armory Forge - Armor Roles (optional pack, full edition)
 
 Three loadouts that make light, medium and heavy armor play differently. The idea comes from
-the mod "Armor Reimagined" by waitiufrikks on AyakaMods (light armor fast and fragile, heavy
+the mod "Armor Reimagined" on AyakaMods (light armor fast and fragile, heavy
 armor tough and slow). This pack does not touch how damage is calculated, so it has no body
 regions, no melee-only reduction and no slow-when-hit: it only uses what Armory Forge already
 edits (an armor's weight class, and passive values). Nothing in it is copied from that mod.
@@ -23,5 +23,5 @@ Use it
      and swap between the three with F9.
   Or in the web builder (https://hung1510.github.io/Super-Earth-Armory-Forge/): Import, pick a file.
 
-Single-player and private lobbies only. Credits: waitiufrikks (the idea), mostlycloudy, SHODAN,
+Single-player and private lobbies only. Credits: mostlycloudy, SHODAN,
 CowboyBingus (Bingus Shared Loader), Hung1510 (Armory Forge).
