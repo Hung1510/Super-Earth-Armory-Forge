@@ -27,6 +27,9 @@ Stratagem presets .. how the game's Hellpod loadout screen is found and driven (
                      research notes and mod "Flexible Stratagems" by Alomare
                      https://github.com/Alomare/FlexibleStratagems
                      (also on Nexus). The search code in tools/strat.lua is written for this mod.
+Armor Roles pack ... the idea (light, medium and heavy armor playing differently) is from the mod
+                     "Armor Reimagined" by waitiufrikks https://ayakamods.com/mods/armor-reimagined.4895/
+                     Nothing is copied from it; the pack only uses values Armory Forge already edits.
 Web builder ........ uses JSZip (MIT) - docs/vendor/
 Mascot ............. the idea and behaviour (eyes follow the cursor, boop, dizzy) are from
                      page-mascot by Kamran Ahmed (MIT) https://github.com/nilbuild/page-mascot

@@ -1,5 +1,8 @@
 # Changelog
 
+## 7.3 (2026-10-13)
+Optional download (full edition), `Super-Earth-Armory-Forge-Armor-Roles-v7.3.zip`: **Armor Roles**, three loadouts that make light, medium and heavy armor play differently. **Light role:** weight Light, +10% move speed, +15% primary reload, +15% sidearm draw and reload, no extra protection. **Medium role:** weight Medium, +25 armor, 10% less chest and explosive damage. **Heavy role:** weight Heavy, +75 armor, 25% less chest and explosive damage, 30% less impact damage and stagger, 15% slower primary reload. They are `.ini` loadouts for the *Every armor* stack: copy a file's text, press **Paste code** in the panel (Undo brings your old stack back), then **+ Save current stack** on the Presets tab to swap between the three with F9. Or **Import** one in the web builder, and change any number in Notepad. The idea comes from *Armor Reimagined* by waitiufrikks (AyakaMods). This pack does not change how damage is calculated, so it has no body regions, melee-only reduction or slow-when-hit: it only uses what Armory Forge already edits, and nothing is copied from that mod. The values are a first pass; tell me what feels off. The mod itself is unchanged from 7.2.1.
+
 ## 7.2.1 (2026-10-10)
 Both editions (full and Passive Swap):
 - **Smoother frames while it searches:** the search for what you wear read 1 MB at a time and only then checked its time budget, so a frame could run over by the time of a whole 1 MB read. It now reads 256 KB at a time (as many as fit in the same 1 ms), so no frame carries a big read. The search for the game's stratagem code (full edition) read 2 MB into a Lua string per frame; it now reads 512 KB at a time up to about 1.5 ms a frame, so it finishes just as fast with no single large allocation.

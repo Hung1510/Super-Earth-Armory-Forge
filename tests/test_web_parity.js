@@ -58,7 +58,7 @@ function jsBuild(text) {
 }
 
 const files = [];
-for (const dir of ["presets", "examples"])
+for (const dir of ["presets", "examples", "packs/armor-roles"])
   for (const f of fs.readdirSync(path.join(root, dir)).filter((f) => f.endsWith(".ini")).sort())
     files.push(path.join(dir, f));
 files.push("loadout.ini");

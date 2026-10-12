@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.2.1"
+VERSION = "7.3"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -997,6 +997,22 @@ def cmd_release(args):
     return 0
 
 
+def cmd_pack(args):
+    """The optional Armor Roles download: the role loadouts and a README, as one zip."""
+    root = os.path.dirname(HERE)
+    src = os.path.join(root, "packs", "armor-roles")
+    files = sorted(f for f in os.listdir(src) if f.endswith((".ini", ".txt")))
+    for f in files:
+        if f.endswith(".ini"):
+            load_config_text(open(os.path.join(src, f), encoding="utf-8").read())   # must parse
+    os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
+    with zipfile.ZipFile(args.zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        for f in files:
+            _zip_write(z, f, open(os.path.join(src, f), "rb").read())
+    print("Wrote pack        : %s  (%d files)" % (args.zip, len(files)))
+    return 0
+
+
 LANG_GROUPS = ("ui", "perk", "effect", "unit", "preset", "desc", "armor")
 LUA_STR = r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\""
 
@@ -1372,6 +1388,10 @@ def main(argv=None):
     w.add_argument("-o", "--output", default=os.path.join(os.path.dirname(HERE), "docs", "data.json"))
     w.add_argument("--check", action="store_true", help="fail if data.json is stale")
     w.set_defaults(func=cmd_export_web)
+    pk = sub.add_parser("pack", help="the optional Armor Roles download (loadouts + README)")
+    pk.add_argument("--zip", required=True)
+    pk.set_defaults(func=cmd_pack)
+
     rs = sub.add_parser("research", help="research build: dump armor kits, optionally set every armor's weight")
     rs.add_argument("--zip", required=True)
     rs.add_argument("--weight", choices=list(RESEARCH_WEIGHTS), default="none")
