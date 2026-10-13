@@ -1,6 +1,7 @@
 # Changelog
 
 ## 7.3.2 (2026-10-13)
+**Armor Reimagined, Armory Forge Edition 1.2.0** (`Helldivers-Armor-Reimagined-Forge-1.2.0.zip`, replaces the 1.1.2 zip from 7.3.1): the optional armor mod, now edited so it stands apart from the original. **Glancing hits depend on the armor class:** a shot whose penetration equals the armor value used to keep 65% of its damage on every class; now light keeps 65%, medium 60% (55% reinforced) and heavy 50% (40% reinforced), so better plates take more of a glancing hit. Everything else is as in 1.1.2. It was built from the mod's included source and has **not been tested in game**; the compiled game files are rebuilt, so please report anything odd. Same install as before (replace the old zip, keep one enabled, restart the game).
 **Armor Roles pack:** the Medium and Heavy roles now also cut chest bleeding (Medium 25% less, Heavy 50% less), so the classes differ in how fast you bleed out too. The game has one bleeding value for the chest, so this cannot depend on which other body part is hit. Armory Forge itself is unchanged from 7.3.1.
 
 ## 7.3.1 (2026-10-13)
