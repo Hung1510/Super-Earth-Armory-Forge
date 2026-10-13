@@ -8,10 +8,12 @@ edits (an armor's weight class, and passive values). Nothing in it is copied fro
 
   Light role   weight Light (fast, quick stamina), +10% move speed, +15% primary reload,
                +15% sidearm draw and reload. No extra protection.
-  Medium role  weight Medium, +25 armor, 10% less chest and explosive damage.
+  Medium role  weight Medium, +25 armor, 10% less chest and explosive damage,
+               chest wounds bleed 25% less.
   Heavy role   weight Heavy (slow), +75 armor, 25% less chest and explosive damage,
-               30% less impact damage and stagger, 15% slower primary reload.
+               30% less impact damage and stagger, 15% slower primary reload, chest wounds bleed 50% less.
 
+Bleeding can only be changed for chest wounds (one game value), not per body part.
 The role applies to whatever armor you wear (the "Every armor" stack), so a heavy-looking armor
 can be set to Light. The values are in the .ini files: open one in Notepad and change a number.
 

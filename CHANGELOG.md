@@ -1,5 +1,8 @@
 # Changelog
 
+## 7.3.2 (2026-10-13)
+**Armor Roles pack:** the Medium and Heavy roles now also cut chest bleeding (Medium 25% less, Heavy 50% less), so the classes differ in how fast you bleed out too. The game has one bleeding value for the chest, so this cannot depend on which other body part is hit. Armory Forge itself is unchanged from 7.3.1.
+
 ## 7.3.1 (2026-10-13)
 Optional download: **Armor Reimagined 1.1.2** ([page](https://ayakamods.com/mods/armor-reimagined.4895/)), attached to this release as `Helldivers-Armor-Reimagined-1.1.2.zip`, the zip unchanged. It is a separate mod, not part of Armory Forge: light, medium and heavy armor get their own protection against shots by body region, melee reduction, movement speed and weapon ergonomics. Install it from its own zip next to Armory Forge (both need Bingus Shared Loader, last in the list). Questions about it go to his page. It does the job the *Armor Roles* pack below only approximated, so use one or the other, not both. Armory Forge itself is unchanged from 7.3.
 
