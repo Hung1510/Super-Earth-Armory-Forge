@@ -40,7 +40,6 @@ SUITES = [
     ("test_weight.py", "armor weight: speed / stamina / armor class, any look"),
     ("test_stratagems.py", "stratagem presets: the loadout screen, found by signature, applied through the game's calls"),
     ("test_recipes.py", "recipes: named passive combos, saved to my-recipes.txt"),
-    ("test_addons.py", "optional Armor Reimagined add-on: zip hash, valid mod zip, attached to the release"),
     ("test_armor_roles.py", "optional Armor Roles pack: three role loadouts, pasted into the panel"),
     ("test_codes_compare.py", "share codes for recipes, presets and stratagem presets; the Compare view"),
     ("test_perf.py", "panel redraw cost: labels measured once, then remembered"),

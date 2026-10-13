@@ -8,4 +8,3 @@ dist/
 tools/booster-names/dist/
 tools/booster/
 tools/booster-names/dump/strings-en.json
-!addons/**/*.zip
