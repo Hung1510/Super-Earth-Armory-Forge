@@ -859,7 +859,7 @@ end
 
 -- the stratagem presets are on: the full edition, and not switched off on the Keys tab
 function PP.strat_on()
-    if MOD.swap_only then return false end
+    if MOD.swap_only or MOD.no_strat then return false end
     if PP.strat_enabled == nil then PP.strat_load_settings() end
     return PP.strat_enabled
 end
@@ -1451,7 +1451,7 @@ function PP.report()
         'last panel error=' .. tostring(d.last_error or '-'),
         PP.input_desc(),
         'language=' .. tostring(ui.lang or 'en') .. '; font test: ' .. tostring(PP.font_result or 'not run'),
-        'stratagem presets=' .. ((not MOD.swap_only and PP.strat_enabled == false) and 'switched off' or tostring(STRAT.state)) .. (STRAT.why and (' (' .. tostring(STRAT.why) .. ')') or ''),
+        'stratagem presets=' .. ((not MOD.swap_only and not MOD.no_strat and PP.strat_enabled == false) and 'switched off' or tostring(STRAT.state)) .. (STRAT.why and (' (' .. tostring(STRAT.why) .. ')') or ''),
         '--- other mods ---',
         'loader api=' .. tostring(type(loader) == 'table' and loader.api) .. ' fields: ' .. PP.names_of(loader, 12),
         'update bus jobs: ' .. PP.names_of(type(bus) == 'table' and bus.jobs, 20),
@@ -2477,7 +2477,7 @@ local function draw(width, height)
         label('Quick-swap loadouts', IX, y, nil, IW)
         y = key_grid('swap_hotkey', swap_key(), hotkey(), y + 20, true) + 6
         y = wrap('Picking the quick-swap key as the panel key turns quick-swap off.', IX, y, 12, C.DIM, IW, 2) + 18
-        if not MOD.swap_only then
+        if not MOD.swap_only and not MOD.no_strat then
             label('Stratagem presets', IX, y, nil, IW)
             local sp_on = PP.strat_on()
             local sx = IX + button('stratfeat:on', 'On', IX, y + 20, nil, 30, true, sp_on) + 8

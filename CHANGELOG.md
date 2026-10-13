@@ -1,5 +1,8 @@
 # Changelog
 
+## 7.3.3 (2026-10-13)
+**Armor Only edition (optional download):** `Super-Earth-Armory-Forge-Armor-Only-v7.3.3.zip`, the full edition without the stratagem presets (asked for by players with older PCs who only use the armor passives). No Stratagems tab, no stratagem key, and none of that code is loaded or run. Everything else is the same, including stacking, values, loadouts and F9 swapping. Install one edition of Armory Forge, not several.
+
 ## 7.3.2 (2026-10-13)
 **Armor Roles pack:** the Medium and Heavy roles now also cut chest bleeding (Medium 25% less, Heavy 50% less), so the classes differ in how fast you bleed out too. The game has one bleeding value for the chest, so this cannot depend on which other body part is hit. Armory Forge itself is unchanged from 7.3.1.
 

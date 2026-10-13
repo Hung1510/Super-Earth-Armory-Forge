@@ -46,6 +46,7 @@ SUITES = [
     ("test_armor_names.py", "armor names: FileDiver dump -> name table, game check"),
     ("test_booster_tool.py", "booster names tool: build script, runner, dumper source, CI workflow"),
     ("test_research.py", "research build: armor kit dump, weight experiment"),
+    ("test_armor_edition.py", "Armor Only edition: no stratagem presets"),
     ("test_swap_edition.py", "Passive Swap edition (Nexus build)"),
     ("test_release.py", "release zips, blank install, old saves"),
     ("test_web_parity.js", "web builder output is byte-identical to Python"),

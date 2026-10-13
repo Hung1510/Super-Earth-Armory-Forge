@@ -16,6 +16,7 @@ FOOTER = """
 |---|---|---|
 | `Super-Earth-Armory-Forge-v{v}.zip` | GitHub, AyakaMods | **Full edition:** stack any armor passives onto your armor and set every value, live in game (F7) |
 | `Super-Earth-Armory-Forge-Passive-Swap-v{v}.zip` | Nexus Mods ([Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789)) | **Passive Swap edition:** give any armor one other passive at the game's own values; no stacking, no value editing |
+| `Super-Earth-Armory-Forge-Armor-Only-v{v}.zip` | GitHub, AyakaMods | **Armor Only edition:** the full edition without the stratagem presets, so nothing of them is loaded or run |
 
 Install one of them with Arsenal (or any HD2 mod manager); both need **Bingus Shared Loader**. Start the game and press **F7**.
 Single-player / private lobbies only.
