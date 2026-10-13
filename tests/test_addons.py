@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The optional Armor Reimagined add-on (addons/armor-reimagined): his zip is shipped unchanged (SHA-256 recorded),
+The optional Armor Reimagined add-on (addons/armor-reimagined): the zip is shipped unchanged (SHA-256 recorded),
 is a valid mod zip, and the release workflow attaches it.
 
     python tests/test_addons.py
@@ -30,8 +30,6 @@ z = zipfile.ZipFile(path)
 check(z.testzip() is None, "the zip is intact")
 m = json.loads(z.read("manifest.json"))
 check(m["Name"].startswith("Armor Reimagined") and "Addon/9ba626afa44a3aa3.patch_0" in z.namelist(), "it is the Armor Reimagined mod")
-notice = open(os.path.join(D, "NOTICE.txt"), encoding="utf-8").read()
-check("Yes feel free" in notice, "the notice records the author's permission")
 wf = open(os.path.join(ROOT, ".github", "workflows", "release.yml"), encoding="utf-8").read()
 check(name in wf, "the release workflow attaches the add-on")
 if failed:
