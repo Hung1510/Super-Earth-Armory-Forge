@@ -165,6 +165,30 @@
   }
 
   // ------------------------------------------------------------------ config -> profiles
+  // The panel / quick-swap key as it is stored: F1..F12, or a key with Ctrl+ / Alt+ / Shift+ in front (a letter,
+  // digit, Insert, Delete, Home, End, PageUp, PageDown needs Ctrl or Alt). null if it is not one.
+  // Mirrors parse_keyname in tools/picker.py and tools/engine.lua.
+  const KEY_NAMES = { INSERT: "Insert", DELETE: "Delete", HOME: "Home", END: "End", PAGEUP: "PageUp", PAGEDOWN: "PageDown" };
+  const KEY_RESERVED = new Set(["CTRL+Z", "CTRL+F", "CTRL+0"]);
+  function parseKeyName(text) {
+    if (typeof text !== "string" || text.length > 40) return null;
+    let ctrl = false, alt = false, shift = false, base = null;
+    for (const part of text.trim().toUpperCase().split(/[+\s]+/)) {
+      if (!part) continue;
+      if (part === "CTRL") ctrl = true;
+      else if (part === "ALT") alt = true;
+      else if (part === "SHIFT") shift = true;
+      else if (base !== null) return null;
+      else base = part;
+    }
+    if (base === null) return null;
+    const isF = /^F([1-9]|1[0-2])$/.test(base);
+    if (!(isF || /^[A-Z0-9]$/.test(base) || Object.prototype.hasOwnProperty.call(KEY_NAMES, base))) return null;
+    if (!isF && !(ctrl || alt)) return null;
+    const name = (ctrl ? "Ctrl+" : "") + (alt ? "Alt+" : "") + (shift ? "Shift+" : "") + (KEY_NAMES[base] || base);
+    return KEY_RESERVED.has(name.toUpperCase()) ? null : name;
+  }
+
   function loadConfigText(cat, text) {
     const sections = parseIni(text);
     const settings = { retire: true, name: null, hotkey: null, swap_hotkey: null, panel_scale: null, panel: true, armors: new Map() };
@@ -175,12 +199,12 @@
           if (k === "retire") settings.retire = TRUE.has(v.trim().toLowerCase());
           else if (k === "name") settings.name = v.trim();
           else if (k === "hotkey") {
-            const hk = v.trim().toUpperCase();
-            if (!/^F([1-9]|1[0-2])$/.test(hk)) throw new ConfigError(`[settings]: hotkey must be F1..F12, got '${v.trim()}'`);
+            const hk = parseKeyName(v);
+            if (!hk) throw new ConfigError(`[settings]: hotkey must be a key like F7 or Ctrl+K, got '${v.trim()}'`);
             settings.hotkey = hk;
           } else if (k === "swap_hotkey") {
-            const hk = v.trim().toUpperCase();
-            if (!/^(F([1-9]|1[0-2])|OFF)$/.test(hk)) throw new ConfigError(`[settings]: swap_hotkey must be F1..F12 or off, got '${v.trim()}'`);
+            const hk = v.trim().toUpperCase() === "OFF" ? "OFF" : parseKeyName(v);
+            if (!hk) throw new ConfigError(`[settings]: swap_hotkey must be a key like F9 or Ctrl+K, or off, got '${v.trim()}'`);
             settings.swap_hotkey = hk;
           } else if (k === "panel_scale") {
             const t = v.trim(), pct = t.endsWith("%");

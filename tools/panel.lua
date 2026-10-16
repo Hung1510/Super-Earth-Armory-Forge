@@ -394,7 +394,8 @@ end
 
 -- The panel key and the quick-swap key: F1..F12 (quick-swap also OFF). A bad value in a
 -- hand-edited loadout.ini falls back to F7 / F9, so the panel can always be opened.
-function PP.fkey(k) return type(k) == 'string' and k:match('^F%d%d?$') and VK[k] and k or nil end
+-- 7.4: any key name parse_keyname accepts (F7, Ctrl+K, Alt+Shift+F3 ...), as it is stored; nil if it isn't one
+function PP.fkey(k) local name = parse_keyname(k); return name end
 local function hotkey() return PP.fkey(LOADOUT and LOADOUT.hotkey) or PP.fkey(MOD.hotkey) or 'F7' end
 local function swap_key()
     local k = (LOADOUT and LOADOUT.swap_hotkey) or MOD.swap_hotkey or 'F9'
@@ -835,10 +836,10 @@ function PP.strat_load_settings()
     if not text then return end
     for line in (text .. '\n'):gmatch('([^\n]*)\n') do
         if not line:match('^%s*;') then                      -- the comment lines in the file mention both words
-            local name, value = line:match('^%s*(%a+)%s*=%s*(%w+)')
+            local name, value = line:match('^%s*(%a+)%s*=%s*([%w%+]+)')
             if name == 'key' then
-                local k = value:upper()
-                if k == 'OFF' or PP.fkey(k) then PP.strat_key_value = k end
+                local k = PP.fkey(value)
+                if value:upper() == 'OFF' then PP.strat_key_value = 'OFF' elseif k and not k:find('Shift%+') then PP.strat_key_value = k end
             elseif name == 'stratagems' and value:lower() == 'off' then
                 PP.strat_enabled = false
             end
@@ -852,7 +853,7 @@ function PP.strat_save_settings()
     write_file(path, table.concat({
         '; Super Earth Armory Forge: stratagem presets (full edition)',
         '; stratagems = on or off: off removes the Stratagems tab and the key, and the mod never touches the stratagem code',
-        '; key = F1..F12 or off: the key that cycles your stratagem presets',
+        '; key = F1..F12 or off, or with Ctrl+ / Alt+ in front (Ctrl+K): the key that cycles your stratagem presets',
         'stratagems = ' .. (PP.strat_enabled and 'on' or 'off'),
         'key = ' .. PP.strat_key_value:lower(), '' }, '\r\n'))
 end
@@ -884,7 +885,7 @@ end
 
 function PP.set_strat_key(k)
     PP.strat_on()
-    if k ~= 'OFF' and (not PP.fkey(k) or k == hotkey() or k == swap_key()) then return end
+    if k ~= 'OFF' and (not PP.fkey(k) or k:find('Shift%+') or k == hotkey() or k == swap_key()) then return end
     PP.strat_key_value = k
     PP.strat_save_settings()
     say(k == 'OFF' and 'Stratagem quick-swap key turned off' or ('Stratagem presets now cycle with ' .. k .. '  (Shift ' .. k .. ' goes back)'), 4)
@@ -893,7 +894,7 @@ end
 -- the next key in F1..F12 that is free, going up (1) or down (-1)
 function PP.strat_key_step(dir)
     local cur = PP.strat_key()
-    local n = cur == 'OFF' and (dir > 0 and 0 or 13) or tonumber(cur:match('%d+'))
+    local n = (cur == 'OFF' or not cur:match('^F%d+$')) and (dir > 0 and 0 or 13) or tonumber(cur:match('%d+'))
     for _ = 1, 12 do
         n = (n - 1 + dir) % 12 + 1
         local k = 'F' .. n
@@ -1283,6 +1284,79 @@ function PP.set_key(which, k)
     else return end
     ui.last_text = snapshot()          -- a key change is not an undo step
     loadout_changed({})
+end
+
+-- 7.4: "Rebind": click, then press the key you want (with Ctrl, Alt and/or Shift held if you like).
+-- Esc cancels. which = 'hotkey' (panel), 'swap_hotkey' (quick-swap) or 'strat' (stratagem presets).
+local CAPTURE = {}
+for n = 1, 12 do CAPTURE[#CAPTURE + 1] = { 0x6F + n, 'F' .. n } end
+for c = 0x41, 0x5A do CAPTURE[#CAPTURE + 1] = { c, string.char(c) } end
+for n = 0, 9 do CAPTURE[#CAPTURE + 1] = { 0x30 + n, tostring(n) } end
+for _, k in ipairs({ { 0x2D, 'Insert' }, { 0x2E, 'Delete' }, { 0x24, 'Home' }, { 0x23, 'End' }, { 0x21, 'PageUp' }, { 0x22, 'PageDown' } }) do
+    CAPTURE[#CAPTURE + 1] = k
+end
+local capture_down = {}
+
+function PP.capture_start(which)
+    if which ~= 'hotkey' and not (which == 'swap_hotkey' and LOADOUT) and not (which == 'strat' and PP.strat_on()) then return end
+    if which == 'hotkey' and not LOADOUT then return end
+    ui.capture = which
+    capture_down = {}
+    for _, k in ipairs(CAPTURE) do capture_down[k[1]] = true end     -- keys already held don't count
+    capture_down[VK.Escape] = true
+    ui.version = ui.version + 1
+    say('Press the new key, with Ctrl / Alt / Shift if you like. Esc cancels.', 8)
+end
+
+local function key_base_same(a, b)           -- two names that would both fire on one press
+    if a == b then return true end
+    local _, sa = parse_keyname(a)
+    local _, sb = parse_keyname(b)
+    if not (sa and sb) or sa.vk ~= sb.vk then return false end
+    return (sa.f and not (sa.ctrl or sa.alt or sa.shift)) or (sb.f and not (sb.ctrl or sb.alt or sb.shift))
+end
+
+function PP.capture_finish(name)
+    local which = ui.capture
+    local other_names = { hotkey = {}, swap_hotkey = {}, strat = {} }
+    local panel_k, swap_k, strat_k = hotkey(), swap_key(), PP.strat_key()
+    if which == 'hotkey' then
+        if swap_k ~= 'OFF' and key_base_same(name, swap_k) then LOADOUT.swap_hotkey = 'OFF' end
+    elseif which == 'swap_hotkey' then
+        if key_base_same(name, panel_k) then say(name .. ' is the panel key. Pick another.', 4); return false end
+    elseif which == 'strat' then
+        if name:find('Shift%+') then say('Shift is how the stratagem key goes back. Use Ctrl or Alt instead.', 4); return false end
+        if key_base_same(name, panel_k) or (swap_k ~= 'OFF' and key_base_same(name, swap_k)) then
+            say(name .. ' is already used by another key. Pick another.', 4); return false
+        end
+    end
+    ui.capture = nil
+    keys_was[name] = true            -- the key is still down: not a fresh press of the new key
+    if which == 'strat' then PP.set_strat_key(name) else PP.set_key(which, name) end
+    ui.version = ui.version + 1
+    return true
+end
+
+function PP.capture_tick()
+    if input.key_down(VK.Escape) then
+        if not capture_down[VK.Escape] then ui.capture = nil; ui.version = ui.version + 1; say('Key not changed', 2); return end
+    else capture_down[VK.Escape] = nil end
+    local ctrl, alt, shift = input.key_down(0x11), input.key_down(0x12), input.key_down(0x10)
+    for _, k in ipairs(CAPTURE) do
+        local down = input.key_down(k[1])
+        if not down then capture_down[k[1]] = nil
+        elseif not capture_down[k[1]] then
+            capture_down[k[1]] = true
+            local name = (ctrl and 'Ctrl+' or '') .. (alt and 'Alt+' or '') .. (shift and 'Shift+' or '') .. k[2]
+            local ok = parse_keyname(name)
+            if not ok then
+                say(k[2]:match('^F%d') and 'That key is used by the panel' or ('Hold Ctrl or Alt with ' .. k[2] .. ' (a bare key would fire while you play)'), 4)
+                return
+            end
+            PP.capture_finish(ok)
+            return
+        end
+    end
 end
 
 function PP.zoom(step)
@@ -2359,7 +2433,8 @@ local function draw(width, height)
         kx = kx + button('skey:prev', '<', kx, y2 + 32, 36, 30, true) + 6
         kx = kx + button('skey:cur', kcur, kx, y2 + 32, 70, 30, true, kcur ~= 'OFF') + 6
         kx = kx + button('skey:next', '>', kx, y2 + 32, 36, 30, true) + 8
-        button('skey:off', 'Turn off', kx, y2 + 32, nil, 30, kcur ~= 'OFF')
+        kx = kx + button('skey:off', 'Turn off', kx, y2 + 32, nil, 30, kcur ~= 'OFF') + 8
+        button('rebind:strat', ui.capture == 'strat' and 'Press a key...' or 'Rebind', kx, y2 + 32, nil, 30, true, ui.capture == 'strat')
         y2 = wrap(kcur == 'OFF' and 'Off. Pick a key with < >.'
                   or ('On the loadout screen, ' .. kcur .. ' puts on the next preset, Shift ' .. kcur .. ' the one before. Works with the panel closed.'),
                   RX, y2 + 68, 12, C.DIM, RIW, 2) + 6
@@ -2470,14 +2545,22 @@ local function draw(width, height)
                 local free = on or k ~= other
                 button('key:' .. which .. ':' .. k, k, IX + col * (each + gap), y + row * 38, each, 30, free, on)
             end
-            return y + math.ceil(#keys / 4) * 38
+            -- 7.4: Rebind takes any key (Ctrl+K, Alt+F3 ...); it shows the key when it is not one of the F-keys above
+            local slot = #keys
+            local col, row = slot % 4, math.floor(slot / 4)
+            if col > 2 then col, row = 0, row + 1; slot = row * 4 end
+            local custom = current ~= 'OFF' and not current:match('^F%d+$')
+            local rx = IX + col * (each + gap)
+            button('rebind:' .. which, ui.capture == which and 'Press a key...' or (custom and cut(current, 13, 2 * each - 24) or 'Rebind'),
+                   rx, y + row * 38, 2 * each + gap, 30, true, ui.capture == which or custom)
+            return y + (row + 1) * 38
         end
         local y = TOP + 64
         label('Open / close this panel', IX, y, nil, IW)
         y = key_grid('hotkey', hotkey(), nil, y + 20, false) + 14
         label('Quick-swap loadouts', IX, y, nil, IW)
         y = key_grid('swap_hotkey', swap_key(), hotkey(), y + 20, true) + 6
-        y = wrap('Picking the quick-swap key as the panel key turns quick-swap off.', IX, y, 12, C.DIM, IW, 2) + 18
+        y = wrap('Rebind: click it, then press any key. Letters, digits, Insert, Home... need Ctrl or Alt held; Esc cancels. Picking the quick-swap key as the panel key turns quick-swap off.', IX, y, 12, C.DIM, IW, 3) + 14
         if not MOD.swap_only and not MOD.no_strat then
             label('Stratagem presets', IX, y, nil, IW)
             local sp_on = PP.strat_on()
@@ -3108,6 +3191,8 @@ local function click(key)
         if not ui.block_input then pcall(PP.give_input) end
         say(ui.block_input and 'The game gets no keyboard or mouse while the panel is open'
             or 'The game gets your keyboard and mouse while the panel is open')
+    elseif kind == 'rebind' then
+        if ui.capture == arg then ui.capture = nil; ui.version = ui.version + 1 else PP.capture_start(arg) end
     elseif kind == 'key' then
         local which, k = arg:match('^([%w_]+):(%w+)$')
         PP.set_key(which, k)
@@ -3378,6 +3463,7 @@ local function pressed(name, vk, now)
 end
 
 local function keyboard(now)
+    if ui.capture then PP.capture_tick(); return end
     local nm = ui.naming
     if nm then
         if pressed('Escape', VK.Escape, now) then finish_naming(false); return end
@@ -3515,7 +3601,8 @@ function PP.hold_input(now)
     local G = PP.gi
     if not PP.block_on() or G.broken or not (input.raw_list and input.raw_register) then return end
     if not input.focused() then return PP.give_input() end
-    local hk = VK[hotkey()]
+    local _, hspec = parse_keyname(hotkey())
+    local hk = hspec and hspec.vk
     if hk and input.key_down(hk) then return end              -- the game sees the panel key let go first
     if input.filter_install and not G.filter and not G.filter_failed then
         local ok, f, why = pcall(input.filter_install, input.window and input.window())
@@ -4161,10 +4248,29 @@ end
 PP.open_panel = open_panel
 
 -- true once per press of a hotkey (window focused)
-local function hotkey_pressed(name)
-    local vk = VK[name]
-    if not vk then return false end
-    local down = input.key_down(vk)
+local key_specs = {}
+local function key_spec(name)
+    local s = key_specs[name]
+    if s == nil then
+        local _, spec = parse_keyname(name)
+        s = spec or false
+        key_specs[name] = s
+    end
+    return s
+end
+-- a plain F-key fires whatever else is held (as before); a key with Ctrl/Alt/Shift in its name needs
+-- exactly those held. allow_shift: the stratagem key, where an extra Shift means "go back".
+local function mods_ok(spec, allow_shift)
+    if spec.f and not (spec.ctrl or spec.alt or spec.shift) then return true end
+    if input.key_down(0x11) ~= spec.ctrl or input.key_down(0x12) ~= spec.alt then return false end
+    local shift = input.key_down(0x10)
+    if spec.shift then return shift end
+    return allow_shift or not shift
+end
+local function hotkey_pressed(name, allow_shift)
+    local spec = key_spec(name)
+    if not spec then return false end
+    local down = input.key_down(spec.vk) and mods_ok(spec, allow_shift)
     local was = keys_was[name]
     keys_was[name] = down
     if not down or was then return false end         -- 7.2: only a fresh press asks whether the game is in front
@@ -4200,7 +4306,8 @@ end
 panel_tick = function(now)
     if not input or not sr then return end
     if state.phase == 'ready' then pcall(PP.watch_file, now) end
-    if hotkey_pressed(hotkey()) then open_panel(not ui.open) end
+    if ui.capture and not ui.open then ui.capture = nil end
+    if not ui.capture and hotkey_pressed(hotkey()) then open_panel(not ui.open) end
     local okp, has = pcall(PP.pad_read)
     PP.has_pad = okp and has
     if PP.has_pad and input.focused() and PP.pad_edge(PP.PAD.BACK + PP.PAD.START) then
@@ -4219,10 +4326,10 @@ panel_tick = function(now)
             toast.text, toast.sub, toast.till = 'Press ' .. hotkey() .. ' to forge your armor', 'ready', now + 6
         end
     end
-    if PP.strat_on() and state.phase == 'ready' then
+    if PP.strat_on() and state.phase == 'ready' and not ui.capture then
         pcall(PP.strat_background, now)
         local tk = PP.strat_key()
-        if tk ~= 'OFF' and hotkey_pressed(tk) and not ui.value and not ui.naming and now >= (ui.strat_key_at or 0) then
+        if tk ~= 'OFF' and hotkey_pressed(tk, true) and not ui.value and not ui.naming and now >= (ui.strat_key_at or 0) then
             ui.strat_key_at = now + 0.35
             local back = input.key_down(VK.Shift)
             if not ui.last_text and LOADOUT then ui.last_text = snapshot() end
@@ -4231,7 +4338,7 @@ panel_tick = function(now)
         end
     end
     local sk = swap_key()
-    if sk ~= 'OFF' and sk ~= hotkey() and hotkey_pressed(sk) and not ui.value and not ui.naming
+    if sk ~= 'OFF' and sk ~= hotkey() and not ui.capture and hotkey_pressed(sk) and not ui.value and not ui.naming
        and state.phase == 'ready' and now >= (ui.swap_at or 0) then
         ui.swap_at = now + 0.25
         if not ui.last_text and LOADOUT then ui.last_text = snapshot() end

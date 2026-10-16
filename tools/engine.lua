@@ -67,6 +67,39 @@ local SELF_MARGIN = 4096
 local MAX_ROUNDS = 12
 local ROUND_DELAY_SECONDS = 10
 local ENFORCE_SECONDS = 5
+
+-- 7.4: key names for the panel key, the quick-swap key and the stratagem key. F1..F12 alone, or any of
+-- F1..F12 / A-Z / 0-9 / Insert, Delete, Home, End, PageUp, PageDown with Ctrl+, Alt+ and/or Shift+ in front.
+-- A letter, digit or navigation key needs Ctrl or Alt (alone it would fire while you play). Returns the
+-- name as it is stored ("Ctrl+K") and { vk, ctrl, alt, shift }, or nil.
+local parse_keyname = (function()
+local KEYVK, KEY_SHOW = {}, {}
+for n = 1, 12 do KEYVK['F' .. n] = 0x6F + n end
+for c = 0x41, 0x5A do KEYVK[string.char(c)] = c end
+for n = 0, 9 do KEYVK[tostring(n)] = 0x30 + n end
+for name, vk in pairs({ Insert = 0x2D, Delete = 0x2E, Home = 0x24, End = 0x23, PageUp = 0x21, PageDown = 0x22 }) do
+    KEYVK[name:upper()] = vk
+    KEY_SHOW[name:upper()] = name
+end
+local KEY_RESERVED = { ['CTRL+Z'] = true, ['CTRL+F'] = true, ['CTRL+0'] = true }     -- the panel's own shortcuts
+local function parse(text)
+    if type(text) ~= 'string' or #text > 40 then return nil end
+    local ctrl, alt, shift, base = false, false, false, nil
+    for part in text:upper():gmatch('[^%+%s]+') do
+        if part == 'CTRL' then ctrl = true
+        elseif part == 'ALT' then alt = true
+        elseif part == 'SHIFT' then shift = true
+        elseif base then return nil
+        else base = part end
+    end
+    if not base or not KEYVK[base] then return nil end
+    if not base:match('^F%d+$') and not (ctrl or alt) then return nil end
+    local name = (ctrl and 'Ctrl+' or '') .. (alt and 'Alt+' or '') .. (shift and 'Shift+' or '') .. (KEY_SHOW[base] or base)
+    if KEY_RESERVED[name:upper()] then return nil end
+    return name, { vk = KEYVK[base], ctrl = ctrl, alt = alt, shift = shift, f = base:match('^F%d+$') ~= nil }
+end
+return parse
+end)()
 local SAVE_DELAY_SECONDS = 1
 local MAX_LOG_LINES = 400
 local PM_BUFFER = 16384      -- bytes of our passive-row copy per record (1024 rows)
@@ -695,10 +728,11 @@ local function parse_loadout(text)
                     if k == 'name' then l.name = val
                     elseif k == 'retire' then l.retire = TRUE_WORDS[val:lower()] or false
                     elseif k == 'hotkey' or k == 'swap_hotkey' then
-                        -- F1..F12 (quick-swap also OFF); anything else keeps the default key
-                        local key, fn = val:upper(), tonumber(val:upper():match('^F(%d%d?)$'))
-                        if (fn and fn >= 1 and fn <= 12) or (key == 'OFF' and k == 'swap_hotkey') then l[k] = key
-                        else log('loadout: ' .. k .. ' = ' .. val .. ' is not F1..F12; using the default') end
+                        -- F1..F12, or a key with Ctrl+/Alt+/Shift+ (quick-swap also OFF); anything else keeps the default key
+                        local key = parse_keyname(val)
+                        if key then l[k] = key
+                        elseif val:upper() == 'OFF' and k == 'swap_hotkey' then l[k] = 'OFF'
+                        else log('loadout: ' .. k .. ' = ' .. val .. ' is not a key name (F7, Ctrl+K ...); using the default') end
                     elseif k == 'panel_scale' then
                         local sc = tonumber((val:gsub('%%$', '')))
                         if sc and val:find('%%$') then sc = sc / 100 end

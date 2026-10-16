@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.4 (2026-10-17)
+All editions:
+- **Rebind any key.** Keys tab: click **Rebind** next to the panel key or the quick-swap key, then press the key you want, with Ctrl, Alt and/or Shift held if you like (Esc cancels). Letters, digits, Insert, Delete, Home, End, PageUp and PageDown need Ctrl or Alt held, so a bare key can't fire while you play; F1 to F12 work alone as before. The F1 to F12 buttons are still there. Full edition: the Stratagems tab has its own **Rebind** for the stratagem quick-swap key (Ctrl or Alt only: Shift is how that key goes back). Ctrl+Z, Ctrl+F and Ctrl+0 are the panel's own shortcuts and can't be used.
+- `loadout.ini` and the web builder accept the same names: `hotkey = Ctrl+K`, `swap_hotkey = Alt+L` (see `examples/custom-keys.ini`).
+- The click-then-press Rebind flow follows the one in Stratagem Extra Pairs (AyakaMods); none of its code is used.
+
 ## 7.3.5 (2026-10-16)
 All editions:
 - **The status file now says what Armory Forge itself costs per frame.** `ArmoryForge-STATUS.txt` (and the panel's problem report) has a new "cost of this mod" section: its own average ms per second, its worst frame, and how many frames took over 50 ms. The Mod Lag Watchdog lists this mod as "(+ all below it)" because Armory Forge sets up the shared update hook that other mods plug into, so its figure also counts every mod hooked underneath; the new line lets you see the mod's own share. When Armory Forge created that hook, it also shows what is below it.

@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.3.5"
+VERSION = "7.4"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -231,6 +231,43 @@ def load_config(path):
         return load_config_text(f.read(), path)
 
 
+_KEY_NAMES = {"INSERT": "Insert", "DELETE": "Delete", "HOME": "Home", "END": "End", "PAGEUP": "PageUp", "PAGEDOWN": "PageDown"}
+_KEY_RESERVED = {"CTRL+Z", "CTRL+F", "CTRL+0"}      # the panel's own shortcuts
+
+
+def parse_keyname(text):
+    """The panel / quick-swap key as it is stored: F1..F12, or a key with Ctrl+ / Alt+ / Shift+ in front
+    (a letter, digit, Insert, Delete, Home, End, PageUp, PageDown needs Ctrl or Alt). None if it is not one.
+    Mirrors parse_keyname in tools/engine.lua and docs/core.js."""
+    if not isinstance(text, str) or len(text) > 40:
+        return None
+    ctrl = alt = shift = False
+    base = None
+    for part in re.split(r"[+\s]+", text.strip().upper()):
+        if not part:
+            continue
+        if part == "CTRL":
+            ctrl = True
+        elif part == "ALT":
+            alt = True
+        elif part == "SHIFT":
+            shift = True
+        elif base is not None:
+            return None
+        else:
+            base = part
+    if base is None:
+        return None
+    is_f = re.fullmatch(r"F([1-9]|1[0-2])", base) is not None
+    if not (is_f or re.fullmatch(r"[A-Z0-9]", base) or base in _KEY_NAMES):
+        return None
+    if not is_f and not (ctrl or alt):
+        return None
+    name = ("Ctrl+" if ctrl else "") + ("Alt+" if alt else "") + ("Shift+" if shift else "") + _KEY_NAMES.get(base, base)
+    return None if name.upper() in _KEY_RESERVED else name
+
+
+
 def load_config_text(text, source="<loadout>"):
     cp = configparser.ConfigParser(delimiters=("=",), inline_comment_prefixes=(";", "#"),
                                    interpolation=None, strict=True)
@@ -246,14 +283,14 @@ def load_config_text(text, source="<loadout>"):
             elif k == "name":
                 settings["name"] = v.strip()
             elif k == "hotkey":
-                hk = v.strip().upper()
-                if not re.match(r"^F([1-9]|1[0-2])$", hk):
-                    raise ConfigError("[settings]: hotkey must be F1..F12, got '%s'" % v.strip())
+                hk = parse_keyname(v)
+                if not hk:
+                    raise ConfigError("[settings]: hotkey must be a key like F7 or Ctrl+K, got '%s'" % v.strip())
                 settings["hotkey"] = hk
             elif k == "swap_hotkey":
-                hk = v.strip().upper()
-                if not re.match(r"^(F([1-9]|1[0-2])|OFF)$", hk):
-                    raise ConfigError("[settings]: swap_hotkey must be F1..F12 or off, got '%s'" % v.strip())
+                hk = "OFF" if v.strip().upper() == "OFF" else parse_keyname(v)
+                if not hk:
+                    raise ConfigError("[settings]: swap_hotkey must be a key like F9 or Ctrl+K, or off, got '%s'" % v.strip())
                 settings["swap_hotkey"] = hk
             elif k == "panel_scale":
                 try:
@@ -1368,7 +1405,7 @@ def cmd_init(args):
     L.append("[settings]")
     L.append("name   = My Armory Build   ; name shown in the mod manager")
     L.append("retire = true               ; true: patch once. false: re-check every 5s")
-    L.append("hotkey = F7                 ; opens the in-game panel (F1..F12)")
+    L.append("hotkey = F7                 ; opens the in-game panel (F1..F12, or Ctrl+K style)")
     L.append("swap_hotkey = F9            ; cycles your presets in game (F1..F12 or off)")
     L.append("panel_scale = 1.0           ; F7 panel size, 0.8 .. 2.0 (Ctrl +/- in game)")
     L.append("panel = on                  ; off: no in-game panel, hotkeys or controller (this file only)")

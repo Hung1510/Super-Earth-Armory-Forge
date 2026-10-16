@@ -27,6 +27,7 @@ SUITES = [
     ("test_panel_scale.py", "panel size, whole-pixel drawing"),
     ("test_panel_scroll_drag.py", "scrolling lists, dragging the panel"),
     ("test_panel_keys_search.py", "Keys tab, bad-key fallback, search"),
+    ("test_rebind.py", "Rebind: any key with Ctrl/Alt/Shift for the panel, quick-swap and stratagem keys"),
     ("test_controller.py", "controller: open, navigate, tabs, back"),
     ("test_passive_info.py", "passive info, stack summary, Remove armor"),
     ("test_report_share.py", "panel off, short share codes, problem report"),
