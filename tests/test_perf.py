@@ -75,7 +75,7 @@ src = open(os.path.join(HERE, "..", "tools", "engine.lua"), encoding="utf-8").re
 check("local WEAR_CHUNK = 262144" in src and "math.min(1048576, r.size - W.cursor)" not in src,
       "wearing search chunks are 256 KB")
 st = open(os.path.join(HERE, "..", "tools", "strat.lua"), encoding="utf-8").read()
-check("local SEARCH_CHUNK = 524288" in st and "2097152" not in st, "stratagem search chunks are 512 KB, run to a time budget")
+check("local SEARCH_CHUNK = 131072" in st and "2097152" not in st and "S.next_frame" in st, "stratagem search chunks are 128 KB, one step per frame, with rests between steps")
 
 if failed:
     print("\n%d FAILED" % len(failed))

@@ -956,7 +956,7 @@ function PP.strat_cycle(dir)
         return
     end
     if not STRAT.ready() then
-        PP.strat_pending = { dir = dir, till = now_s() + 10 }
+        PP.strat_pending = { dir = dir, till = now_s() + 30 }
         PP.strat_toast('Finding the game\'s loadout code...', 'stratagem presets', nil, 3)
         return
     end

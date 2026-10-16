@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.3.4 (2026-10-16)
+Full edition (the stratagem presets; the Passive Swap and Armor Only editions never run this code):
+- **Lighter stratagem search:** when a game patch moves the loadout code, the mod searches game.dll for it. It read 512 KB per step and ran at least one step on every frame, in a row, so a long search could cost most of a frame each time. It now reads 128 KB, runs one step per frame at most and rests between steps (about a quarter of the time at most), so the search takes a few seconds longer in the background and never one big frame. A quick-swap waiting for the search now waits up to 30 s (was 10 s).
+- Nothing changes when the code is found at the build's known addresses (the usual case): that check is instant and unchanged.
+
 ## 7.3.3 (2026-10-13)
 **Armor Only edition (optional download):** `Super-Earth-Armory-Forge-Armor-Only-v7.3.3.zip`, the full edition without the stratagem presets (asked for by players with older PCs who only use the armor passives). No Stratagems tab, no stratagem key, and none of that code is loaded or run. Everything else is the same, including stacking, values, loadouts and F9 swapping. Install one edition of Armory Forge, not several.
 

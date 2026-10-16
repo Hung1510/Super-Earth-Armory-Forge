@@ -114,8 +114,9 @@ function Scan:accept(sig, rva)
     return true
 end
 
--- 7.2: 512 KB per step (was 2 MB, a 2 MB Lua string in one frame); S.tick runs as many steps as fit in about 1.5 ms
-local SEARCH_CHUNK = 524288
+-- 7.4: 128 KB per step (7.2: 512 KB, was 2 MB). One step is one frame's worst case: a Lua string of the chunk
+-- and nine plain finds over it. S.tick runs at most one step per frame and rests between steps.
+local SEARCH_CHUNK = 131072
 
 -- true: all found at the known addresses. false: search needed (self.queue is set).
 function Scan:start()
@@ -283,12 +284,13 @@ end
 function S.tick()
     S.frames = S.frames + 1
     if S.state == 'searching' then
-        local deadline = api.now() + 0.0015
-        repeat
-            local ok, done = pcall(scan.step, scan)
-            if not ok then S.state, S.why = 'off', tostring(done); return end
-            if done then finish_scan(); return end
-        until api.now() >= deadline
+        if S.frames < (S.next_frame or 0) then return end   -- resting: the search never takes frames in a row
+        local t0 = api.now()
+        local ok, done = pcall(scan.step, scan)
+        if not ok then S.state, S.why = 'off', tostring(done); return end
+        if done then finish_scan(); return end
+        -- 7.4: rest as many frames as the step is long, times 3 (at most ~25% of the time), at least one
+        S.next_frame = S.frames + 1 + math.floor((api.now() - t0) * 3 / 0.0167)
     end
 end
 
