@@ -77,6 +77,17 @@ check("local WEAR_CHUNK = 262144" in src and "math.min(1048576, r.size - W.curso
 st = open(os.path.join(HERE, "..", "tools", "strat.lua"), encoding="utf-8").read()
 check("local SEARCH_CHUNK = 131072" in st and "2097152" not in st and "S.next_frame" in st, "stratagem search chunks are 128 KB, one step per frame, with rests between steps")
 
+# 7.3.5: the status file says what this mod itself costs per frame (the Watchdog adds the chain below it)
+import glob  # noqa: E402
+ad2 = tempfile.mkdtemp()
+g2 = FakeGame(path, appdata=ad2)
+g2.tick(2200)
+g2.advance_wall(10)
+g2.tick(400)
+sf = glob.glob(os.path.join(ad2, "**", "ArmoryForge-STATUS.txt"), recursive=True)
+txt = open(sf[0], encoding="utf-8").read() if sf else ""
+check("--- cost of this mod" in txt and "own cost:" in txt, "STATUS file has the mod's own cost per frame (%s)" % (txt[-300:] if txt else "no file"))
+
 if failed:
     print("\n%d FAILED" % len(failed))
     sys.exit(1)

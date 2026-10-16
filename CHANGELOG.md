@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.3.5 (2026-10-16)
+All editions:
+- **The status file now says what Armory Forge itself costs per frame.** `ArmoryForge-STATUS.txt` (and the panel's problem report) has a new "cost of this mod" section: its own average ms per second, its worst frame, and how many frames took over 50 ms. The Mod Lag Watchdog lists this mod as "(+ all below it)" because Armory Forge sets up the shared update hook that other mods plug into, so its figure also counts every mod hooked underneath; the new line lets you see the mod's own share. When Armory Forge created that hook, it also shows what is below it.
+- **Wearing detection: logs how it decided.** When the "Wearing" header changes, the log now lists which armor each remembered loadout spot held ("SC-34 x3, RS-89 x2"), and on a tie the armor a spot changed to last wins. A report said the header showed the previous armor; the new log line will show why if it happens again.
+
 ## 7.3.4 (2026-10-16)
 Full edition (the stratagem presets; the Passive Swap and Armor Only editions never run this code):
 - **Lighter stratagem search:** when a game patch moves the loadout code, the mod searches game.dll for it. It read 512 KB per step and ran at least one step on every frame, in a row, so a long search could cost most of a frame each time. It now reads 128 KB, runs one step per frame at most and rests between steps (about a quarter of the time at most), so the search takes a few seconds longer in the background and never one big frame. A quick-swap waiting for the search now waits up to 30 s (was 10 s).

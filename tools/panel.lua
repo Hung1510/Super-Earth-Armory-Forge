@@ -1456,6 +1456,7 @@ function PP.report()
         'loader api=' .. tostring(type(loader) == 'table' and loader.api) .. ' fields: ' .. PP.names_of(loader, 12),
         'update bus jobs: ' .. PP.names_of(type(bus) == 'table' and bus.jobs, 20),
         'globals added after Armory Forge started: ' .. PP.names_of(added, 30),
+        table.concat(state.cost_lines and state.cost_lines() or {}, '\r\n'),
         '--- engine ---',
         'wearing=' .. (KITS.worn and KITS.name(KITS.worn) or '-') .. ' armor kits=' .. KITS.found ..
             ' loadout spots=' .. #(KITS.wear.spots or {}) .. ' (' .. tostring(KITS.wear.state) .. ')',

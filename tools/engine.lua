@@ -1328,18 +1328,28 @@ function KITS.wear_tick(now)
     elseif W.state == 'watching' and now >= W.check_at then
         W.check_at = now + (panel_open() and 1 or 3)     -- closed panel: nobody is looking
         local votes, best, n = {}, nil, 0
+        W.vals, W.moved = W.vals or {}, W.moved or {}
         for _, addr in ipairs(W.spots) do
             local b = api.read(addr - 8, 12)
             if b and KITS.ids[u32(b, 8)] == 0 and KITS.ids[u32(b, 0)] == 1 and KITS.ids[u32(b, 4)] == 2 then
                 local id = u32(b, 8)
                 votes[id] = (votes[id] or 0) + 1
-                if votes[id] > n then best, n = id, votes[id] end
+                -- 7.3.5: remember when a spot last changed to this armor (the live loadout changes when you
+                -- equip; a stale copy does not)
+                if W.vals[addr] ~= id then W.vals[addr] = id; W.moved[id] = now end
             end
+        end
+        for id, v in pairs(votes) do
+            -- most spots win; on a tie, the armor a spot changed to last
+            if v > n or (v == n and best and (W.moved[id] or 0) > (W.moved[best] or 0)) then best, n = id, v end
         end
         if best then
             if best ~= KITS.worn then
                 KITS.worn = best
-                log('wearing: ' .. KITS.name(best))
+                local tally = {}
+                for id, v in pairs(votes) do tally[#tally + 1] = string.format('%s x%d', KITS.name(id), v) end
+                table.sort(tally)
+                log('wearing: ' .. KITS.name(best) .. '  (spots: ' .. table.concat(tally, ', ') .. ')')
             end
         else                                    -- the spots are gone (new session?): search where they were
             local near = W.spots

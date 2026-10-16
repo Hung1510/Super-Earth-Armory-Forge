@@ -2,7 +2,31 @@
 local BUS = nil
 local next_round, next_enforce = 0, 0
 
-local function tick()
+-- 7.3.5: what this mod itself costs per frame (the Mod Lag Watchdog counts "(+ all below it)": every
+-- mod hooked underneath, so its figure is not this mod's alone). Written to ArmoryForge-STATUS.txt.
+local COST = { t0 = nil, total = 0, frames = 0, worst = 0, worst_at = 0, over50 = 0, base_total = 0, base_worst = 0, chain = false }
+state.cost = COST
+local function cost_note(dt)
+    COST.t0 = COST.t0 or api.now()
+    COST.total, COST.frames = COST.total + dt, COST.frames + 1
+    if dt > COST.worst then COST.worst, COST.worst_at = dt, state.frame end
+    if dt > 0.05 then COST.over50 = COST.over50 + 1 end
+end
+function state.cost_lines()
+    local span = COST.t0 and math.max(api.now() - COST.t0, 0.001) or 0
+    local out = { '--- cost of this mod (its own update job) ---' }
+    if COST.frames == 0 then out[#out + 1] = 'not measured yet'; return out end
+    out[#out + 1] = string.format('own cost: %.2f ms/s average over %.0f s (%d frames), worst frame %.1f ms (frame %d), frames over 50 ms: %d',
+        COST.total / span * 1000, span, COST.frames, COST.worst * 1000, COST.worst_at, COST.over50)
+    if COST.chain then
+        out[#out + 1] = string.format('everything below this hook (the game and the other mods hooked before it): %.1f ms/s average, worst %.0f ms',
+            COST.base_total / span * 1000, COST.base_worst * 1000)
+        out[#out + 1] = 'The Mod Lag Watchdog adds that to the line above, because it times this hook as "(+ all below it)".'
+    end
+    return out
+end
+
+local function tick_inner()
     state.frame = state.frame + 1
     if state.phase == 'gave_up' or state.frame < START_FRAME then return end
     local now = api.now()
@@ -59,6 +83,13 @@ local function tick()
     end
 end
 
+local function tick()
+    local t0 = api.now()
+    tick_inner()
+    cost_note(api.now() - t0)
+    if state.frame % 1800 == 0 and state.pp then state.pp.diag_dirty = true end   -- refresh the status file about every 30 s
+end
+
 -- ---------------------------------------------------------------- startup
 local ok, failure = pcall(function()
     local loader = rawget(_G, 'CowboyBingusModLoader')
@@ -101,7 +132,13 @@ if not BUS then
     if type(BUS.base) ~= 'function' then return end
     local dispatcher
     dispatcher = function(...)
+        local b0 = api.now and api.now()
         local ok, first, second = pcall(BUS.base, ...)
+        if b0 then
+            local d = api.now() - b0
+            COST.chain, COST.base_total = true, COST.base_total + d
+            if d > COST.base_worst then COST.base_worst = d end
+        end
         for _, job in pairs(BUS.jobs) do pcall(job) end
         if ok then return first, second end
     end
