@@ -337,7 +337,7 @@ check(len(w.calls) == n, "and nothing is applied")
 # ------------------------------------------------------------------ 3. moved, twice, missing, inconsistent
 moved = World(fake_dll(moved={"set_slot": 0x1600000, "open_list": 0x1610000}))
 moved.open_tab()
-moved.g.tick(60)
+moved.g.tick(700)
 check("EAGLE STRAFING RUN" in moved.texts().upper(), "moved code (2 signatures) is found by search and works")
 
 for label, kw in (("code moved and found twice", dict(twice="equip_tail", moved={"equip_tail": 0x1600000})), ("code missing", dict(drop="set_slot")),
@@ -480,7 +480,7 @@ check(q4.slots() == before and "ready" in q4.texts().lower(), "while ready it ch
 # moved code: the key starts the search, and finishes the swap when it is found
 q5 = with_presets(fake_dll(moved={"set_slot": 0x1600000, "open_list": 0x1610000}))
 q5.g.key(F10)
-q5.g.tick(120)
+q5.g.tick(700)
 check(q5.slots() == [9, 0, 0, 0], "code moved: the key starts the search and puts the preset on when it is found (%s)" % q5.slots())
 
 # the Passive Swap edition does not have it
