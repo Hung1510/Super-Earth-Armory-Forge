@@ -72,7 +72,7 @@ check(asks() - a0 <= 60, "panel open: at most one focus check a frame (%d in 60)
 
 # 7.2: the wearing search reads 256 KB at a time (was 1 MB), so a frame stays near its budget
 src = open(os.path.join(HERE, "..", "tools", "engine.lua"), encoding="utf-8").read()
-check("local WEAR_CHUNK = 262144" in src and "math.min(1048576, r.size - W.cursor)" not in src,
+check("local WEAR_CHUNK = 65536" in src and "math.min(1048576, r.size - W.cursor)" not in src,
       "wearing search chunks are 256 KB")
 st = open(os.path.join(HERE, "..", "tools", "strat.lua"), encoding="utf-8").read()
 check("local SEARCH_CHUNK = 131072" in st and "2097152" not in st and "S.next_frame" in st, "stratagem search chunks are 128 KB, one step per frame, with rests between steps")

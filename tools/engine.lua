@@ -59,7 +59,7 @@ local MAX_PAYLOAD = 64 * 1024 * 1024
 local BUDGET_MIN, BUDGET_MAX, BUDGET_SHARE = 0.0008, 0.002, 0.08   -- seconds of scanning per frame
 local HOT_WINDOW = 4 * 1024 * 1024    -- after the first armor-passive block, look this far around it
 local KIT_WINDOW = 1024 * 1024        -- and this far around the armor kit records (weight)
-local CHUNK = 262144
+local CHUNK = 65536
 local START_FRAME = 300
 local PROBE_MIN_ALLOC = 64 * 1024
 local PROBE_BYTES = 128 * 1024
@@ -1275,10 +1275,10 @@ end
 -- mission) only the regions that held them are searched again, and a full pass happens at
 -- most WEAR_FULL_MAX times a session, and only while the panel is open (it is the only
 -- thing that shows what you wear).
-local WEAR_BUDGET, WEAR_FULL_MAX = 0.001, 3
+local WEAR_BUDGET, WEAR_FULL_MAX = 0.0006, 3
 -- 7.2: the budget is checked after each chunk, so a 1 MB chunk overshot it by the time of one whole
 -- chunk in a frame; 256 KB chunks keep a frame within about the budget, and as many fit as the budget allows
-local WEAR_CHUNK = 262144
+local WEAR_CHUNK = 65536
 KITS.wear = { state = 'idle', spots = {}, tries = 0, full = 0 }
 
 -- Sweeping the whole address space (VirtualQuery in a loop, then a sort) takes a few ms:
@@ -1784,11 +1784,22 @@ local function scan_step()
     end
     while not probe.done and probe.index <= #probe.regions do
         local region = probe.regions[probe.index]
-        probe.index = probe.index + 1
         local key = string.format('%X', region.allocation_base)
-        if not probe.seen[key] then
-            probe.seen[key] = true
-            pcall(scan_chunk, region.allocation_base, math.min(PROBE_BYTES, region.size))
+        if probe.seen[key] then
+            probe.index, probe.sub = probe.index + 1, 0
+        else
+            -- 7.5: the first PROBE_BYTES of an allocation, CHUNK at a time (one 128 KB read is a frame hitch)
+            local total = math.min(PROBE_BYTES, region.size)
+            local sub = probe.sub or 0
+            local take = math.min(CHUNK, total - sub)
+            pcall(scan_chunk, region.allocation_base + sub, take)
+            sub = sub + math.max(take - scan.overlap, 1)
+            if sub >= total then
+                probe.seen[key] = true
+                probe.index, probe.sub = probe.index + 1, 0
+            else
+                probe.sub = sub
+            end
         end
         if api.now() >= deadline then return false end
     end

@@ -1,5 +1,8 @@
 # Changelog
 
+## 7.4.2 (2026-10-18)
+All editions:
+- **Smaller steps for the armor scans, so no frame carries a big read.** The armor search and the "wearing" detection used to read memory 256 KB at a time (the first look at each allocation read 128 KB in one go); a single read of that size could take several milliseconds on its own, whatever the per-frame budget said. Both now read 64 KB at a time, and the wearing pass takes 0.6 ms per frame instead of 1 ms. The scans finish a little later in wall time; nothing they find changes.
 ## 7.4.1 (2026-10-18)
 All editions:
 - **No more one-frame stall when the memory scan starts.** Finding the armor data walks the game's whole address space, and a heavily modded game has tens of thousands of memory regions; the walk (and a sort of the result) ran in a single frame. It now runs a little each frame inside the same time budget as the scan itself, and the sort is replaced by size classes. Same results, no spike.
