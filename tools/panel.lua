@@ -794,6 +794,61 @@ function PP.save_user()
     return write_file(path, table.concat(L, '\r\n'))
 end
 
+-- ---------------------------------------------------------------- randomize (just for fun)
+-- A random value for one effect, kept inside what the game takes and what the panel can show:
+-- resist 5-100%, other multipliers half to double, armor 0-150, extra counts -1..+2, times half to double.
+-- Flags ("set") are left alone.
+function PP.random_value(e)
+    local R, u = math.random, PP.unit(e)
+    local v
+    if u == 'set' then return nil
+    elseif u == 'resist' then v = math.max(0.05, math.floor((0.1 + R() * 0.9) * 20 + 0.5) / 20)
+    elseif u == 'armor' then v = math.floor(R() * 7) / 2
+    elseif u == 'count' then v = math.max(0, (e.def or 0) + R(-1, 2))
+    else
+        if not e.def or e.def == 0 then return nil end
+        v = e.def * 2 ^ (R() * 2 - 1)
+    end
+    local lo, hi = limits(e)
+    v = math.max(lo, math.min(hi, math.floor(v * 1000 + 0.5) / 1000))
+    return v
+end
+
+-- A whole random loadout: every armor passive gets 1-5 random other passives stacked on it, a random
+-- weight class (or the game's own), and about 70% of the values on its stack changed. Built as loadout
+-- text and read back through the normal reader, so it is exactly as valid as a hand-made one.
+function PP.random_loadout_text()
+    math.randomseed(os.time() + math.floor(api.now() * 1000) % 100000)
+    local R = math.random
+    local L = { '[settings]', 'name=' .. (tostring(LOADOUT and LOADOUT.name or MOD.title):gsub('[;#\r\n=]', ' ')) }
+    local ids = {}
+    for _, c in ipairs(CAT_LIST) do ids[#ids + 1] = c.id end
+    local classes = { false, 'light', 'medium', 'heavy' }
+    for _, c in ipairs(CAT_LIST) do
+        L[#L + 1] = '[profile: ' .. c.id .. ']'
+        L[#L + 1] = 'conflicts=strongest'
+        local w = classes[R(1, 4)]
+        if w then L[#L + 1] = 'weight=' .. w end
+        local pool = {}
+        for _, id in ipairs(ids) do if id ~= c.id then pool[#pool + 1] = id end end
+        local extra = { c.id }
+        for _ = 1, R(1, 5) do
+            local k = R(1, #pool)
+            extra[#extra + 1] = table.remove(pool, k)
+            L[#L + 1] = extra[#extra] .. '=on'
+        end
+        for _, pid in ipairs(extra) do
+            for _, e in ipairs(CAT[pid].effects) do
+                if R() < 0.7 then
+                    local v = PP.random_value(e)
+                    if v and v ~= e.def then L[#L + 1] = pid .. '.' .. e.key .. '=' .. fmt_num(v) end
+                end
+            end
+        end
+    end
+    return table.concat(L, '\n') .. '\n'
+end
+
 -- ---------------------------------------------------------------- stratagem presets
 -- Saved in ArmoryForge\my-stratagems.txt, one per line: Name | Stratagem | Stratagem | Stratagem | Stratagem
 -- ("-" is an empty slot). The names are the game's own internal stratagem names, so they hold across updates.
@@ -2280,7 +2335,13 @@ local function draw(width, height)
         end
         bar.w = 0
         if #PP.user == 0 then text(MOD.swap_only and 'None yet. Save your current swaps.' or 'None yet. Save the current stack.', IX + 4, y + 4, 13, C.DIM, IW - 8); y = y + 26 end
-        button('psave', MOD.swap_only and '+ Save current swaps' or '+ Save current stack', IX, math.min(y + 10, BOT - 44), IW, 32, true, true)
+        if MOD.swap_only then
+            button('psave', '+ Save current swaps', IX, math.min(y + 10, BOT - 44), IW, 32, true, true)
+        else
+            local by = math.min(y + 10, BOT - 44)
+            button('psave', '+ Save current stack', IX, by, IW - 108, 32, true, true)
+            button('prandom', 'Randomize', IX + IW - 100, by, 100, 32, true)
+        end
 
         local entry = nil
         for _, e in ipairs(list) do if ui.psel and e.kind == ui.psel.kind and e.i == ui.psel.i then entry = e end end
@@ -3416,6 +3477,18 @@ local function click(key)
         ui.psel = { kind = 'user', i = #PP.user }
         ui.naming = { i = #PP.user, text = base .. ' ' .. k, fresh = true }
         say('Saved. Type a name for it, or press Enter to keep "' .. base .. ' ' .. k .. '".', 5)
+    elseif kind == 'prandom' and not MOD.swap_only then
+        local ok, l = pcall(parse_loadout, PP.random_loadout_text())
+        if not ok or not l then say('Could not build a random loadout'); return end
+        PP.replace(l, nil)
+        local base, k = 'Random', 1
+        local taken = {}
+        for _, u in ipairs(PP.user) do taken[u.name] = true end
+        while taken[base .. ' ' .. k] do k = k + 1 end
+        PP.user[#PP.user + 1] = { name = base .. ' ' .. k, text = snapshot() }
+        PP.save_user()
+        ui.psel = { kind = 'user', i = #PP.user }
+        say('Random loadout applied and saved as "' .. base .. ' ' .. k .. '". Ctrl+Z undoes it.', 6)
     elseif kind == 'pover' and ui.psel and ui.psel.kind == 'user' then
         if confirm('pover') then
             PP.user[ui.psel.i].text = snapshot()

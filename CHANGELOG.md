@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+Full and Armor Only editions:
+- **Randomize button (Presets tab), just for fun.** One click builds a whole random loadout: every armor passive gets 1 to 5 random other passives stacked on it, a random weight class (or the game's own), and about 70% of the values on its stack changed (resists 5 to 100%, other multipliers half to double, armor 0 to 150, and so on; flags are left alone). It is applied right away and saved as a preset ("Random 1", "Random 2", ...) so you can come back to it or delete it; Ctrl+Z undoes it. The Passive Swap edition has no such button (it stays at the game's own values).
 ## 7.4.1 (2026-10-18)
 All editions:
 - **No more one-frame stall when the memory scan starts.** Finding the armor data walks the game's whole address space, and a heavily modded game has tens of thousands of memory regions; the walk (and a sort of the result) ran in a single frame. It now runs a little each frame inside the same time budget as the scan itself, and the sort is replaced by size classes. Same results, no spike.

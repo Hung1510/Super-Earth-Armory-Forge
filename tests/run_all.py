@@ -31,6 +31,7 @@ SUITES = [
     ("test_controller.py", "controller: open, navigate, tabs, back"),
     ("test_passive_info.py", "passive info, stack summary, Remove armor"),
     ("test_report_share.py", "panel off, short share codes, problem report"),
+    ("test_randomize.py", "Randomize button: a random loadout saved as a preset, undo, no button in Passive Swap"),
     ("test_wearing.py", "what you wear, one armor's weight, the game's input while open"),
     ("test_every_armor.py", "the Every armor stack: a setup that stays whatever armor you wear"),
     ("test_lang.py", "the panel in Simplified Chinese; data stays English; fonts without Chinese"),
