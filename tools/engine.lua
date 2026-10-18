@@ -1375,6 +1375,15 @@ end
 
 function KITS.wear_tick(now)
     local W = KITS.wear
+    -- 7.4.1: a frame that came 40 ms+ after the last one means the game is struggling (loading, a heavy
+    -- scene): the background pass sits that frame out (at most 30 in a row, so it always finishes)
+    local gap = now - (W.prev_now or now)
+    W.prev_now = now
+    if gap > 0.04 and (W.sat or 0) < 30 and (W.state == 'scanning' or W.state == 'sweeping') then
+        W.sat = (W.sat or 0) + 1
+        return
+    end
+    W.sat = 0
     if W.state == 'idle' then
         if KITS.found > 0 and now >= (W.retry_at or 0) then
             if W.full == 0 then

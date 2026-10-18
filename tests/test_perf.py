@@ -94,6 +94,16 @@ g3 = FakeGame(path, appdata=tempfile.mkdtemp(), sweep_per_step=1)
 g3.tick(2400)
 check(g3.sweep_steps >= 2, "the region walk is incremental (%d steps)" % g3.sweep_steps)
 
+# 7.4.1: on a struggling game (every frame 50 ms apart) the wearing pass sits frames out, but still finishes
+g5 = FakeGame(path, appdata=tempfile.mkdtemp())
+g5.L.execute(b"local t = 0; TEST_API.now = function() t = t + 0.05; return t end")
+g5.wear(7)
+g5.tick(1500)
+g5.key(0x76)
+g5.tick(150)
+check(any("Med-Kit" in x and ("earing" in x or "：" in x or ":" in x) for x in g5.texts()),
+      "on a slow game (50 ms frames) the wearing pass still finishes and the header shows the armor")
+
 if failed:
     print("\n%d FAILED" % len(failed))
     sys.exit(1)
