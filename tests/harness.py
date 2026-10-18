@@ -145,7 +145,7 @@ update = function() end
 
 
 class FakeGame:
-    def __init__(self, lua_path, retire=None, appdata=None, perks=None, game=None, junk_mb=0):
+    def __init__(self, lua_path, retire=None, appdata=None, perks=None, game=None, junk_mb=0, sweep_per_step=0):
         # game: {perk: (name, rows, stats)} the fake game holds; default = the catalog
         src = open(lua_path, encoding="utf-8").read()
         if retire is not None:
@@ -173,6 +173,22 @@ class FakeGame:
             b"address_of": lambda t: None, b"mkdir": self._mkdir,
             b"now": lambda: self.L.globals()[b"FAKE_NOW"], b"module_base": lambda n: None,
         })
+        self.sweep_steps = 0
+        if sweep_per_step:    # 7.5: hand out the region list a few at a time, like the real incremental walk
+            def sweep_new():
+                return self.L.table_from({b"i": 0, b"done": False})
+
+            def sweep_step(st, deadline):
+                self.sweep_steps += 1
+                st[b"i"] = st[b"i"] + sweep_per_step
+                items = sorted(self.mem.items(), key=lambda kv: -len(kv[1]))
+                if st[b"i"] >= len(items):
+                    st[b"list"] = self._regions()
+                    st[b"done"] = True
+                    return True
+                return False
+            g[b"TEST_API"][b"sweep_new"] = sweep_new
+            g[b"TEST_API"][b"sweep_step"] = sweep_step
         # measure text like a real font would (Pillow, if installed), so layout checks
         # and screenshots match what a proportional UI font does
         self._measure_font = {}

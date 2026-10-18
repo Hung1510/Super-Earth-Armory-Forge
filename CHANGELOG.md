@@ -1,5 +1,8 @@
 # Changelog
 
+## 7.4.1 (2026-10-18)
+All editions:
+- **No more one-frame stall when the memory scan starts.** Finding the armor data walks the game's whole address space, and a heavily modded game has tens of thousands of memory regions; the walk (and a sort of the result) ran in a single frame. It now runs a little each frame inside the same time budget as the scan itself, and the sort is replaced by size classes. Same results, no spike.
 ## 7.4 (2026-10-17)
 All editions:
 - **Rebind any key.** Keys tab: click **Rebind** next to the panel key or the quick-swap key, then press the key you want, with Ctrl, Alt and/or Shift held if you like (Esc cancels). Letters, digits, Insert, Delete, Home, End, PageUp and PageDown need Ctrl or Alt held, so a bare key can't fire while you play; F1 to F12 work alone as before. The F1 to F12 buttons are still there. Full edition: the Stratagems tab has its own **Rebind** for the stratagem quick-swap key (Ctrl or Alt only: Shift is how that key goes back). Ctrl+Z, Ctrl+F and Ctrl+0 are the panel's own shortcuts and can't be used.

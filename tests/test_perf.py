@@ -88,6 +88,12 @@ sf = glob.glob(os.path.join(ad2, "**", "ArmoryForge-STATUS.txt"), recursive=True
 txt = open(sf[0], encoding="utf-8").read() if sf else ""
 check("--- cost of this mod" in txt and "own cost:" in txt, "STATUS file has the mod's own cost per frame (%s)" % (txt[-300:] if txt else "no file"))
 
+# 7.5: the memory walk is spread over frames (a modded game has tens of thousands of regions); the scan
+# still finds the armors, and the walk really took more than one step
+g3 = FakeGame(path, appdata=tempfile.mkdtemp(), sweep_per_step=1)
+g3.tick(2400)
+check(g3.sweep_steps >= 2, "the region walk is incremental (%d steps)" % g3.sweep_steps)
+
 if failed:
     print("\n%d FAILED" % len(failed))
     sys.exit(1)

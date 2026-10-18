@@ -267,23 +267,50 @@ local function build_api()
         return v
     end
 
-    function self.regions()
-        local out = {}
-        local address = 0
-        while address < 0x7FFFFFFF0000 do
-            if query(ffi.cast('const void *', address), region, region_size) ~= region_size then break end
-            local base = tonumber(ffi.cast('uintptr_t', region[0].base))
-            local size = tonumber(region[0].size)
-            if not base or not size or size <= 0 then break end
-            if region[0].state == MEM_COMMIT and region[0].type == MEM_PRIVATE
-                and (region[0].protection == PAGE_READONLY or region[0].protection == PAGE_READWRITE) then
-                out[#out + 1] = { base = base, size = size,
-                                  allocation_base = tonumber(ffi.cast('uintptr_t', region[0].allocation_base)) }
+    -- 7.5: the walk over the address space in steps. Heavily modded games have tens of thousands of memory
+    -- regions, and doing the whole walk (plus a sort) in one frame was a stall of tens of ms. sweep_new(),
+    -- then sweep_step(st, deadline) each frame until it returns true; st.list is then the committed private
+    -- read/write regions, big ones first (grouped by size class, which is all the scan needs).
+    pcall(ffi.cdef, [[typedef struct {
+        uintptr_t base; uintptr_t allocation_base; uint32_t allocation_protection;
+        uint16_t partition; uint16_t reserved; size_t size;
+        uint32_t state; uint32_t protection; uint32_t type;
+    } ]] .. REGION_TYPE .. 'N;')
+    local sweep_buf = ffi.new(REGION_TYPE .. 'N[1]')
+    local sweep_query = ffi.cast('size_t (*)(uintptr_t, void *, size_t)', kernel.VirtualQuery)
+    local sweep_size = ffi.sizeof(REGION_TYPE .. 'N')
+    function self.sweep_new() return { address = 0, buckets = {}, top = 0, done = false } end
+    function self.sweep_step(st, deadline)
+        if st.done then return true end
+        local r, buckets, count = sweep_buf[0], st.buckets, 0
+        while true do
+            local address = st.address
+            if address >= 0x7FFFFFFF0000 or sweep_query(address, sweep_buf, sweep_size) ~= sweep_size then st.done = true break end
+            local base, size = tonumber(r.base), tonumber(r.size)
+            if not base or not size or size <= 0 then st.done = true break end
+            if r.state == MEM_COMMIT and r.type == MEM_PRIVATE
+                and (r.protection == PAGE_READONLY or r.protection == PAGE_READWRITE) then
+                local _, class = math.frexp(size)
+                local list = buckets[class]
+                if not list then list = {}; buckets[class] = list; if class > st.top then st.top = class end end
+                list[#list + 1] = { base = base, size = size, allocation_base = tonumber(r.allocation_base) }
             end
-            address = base + size
+            st.address = base + size
+            count = count + 1
+            if deadline and count % 64 == 0 and self.now() >= deadline then return false end
         end
-        table.sort(out, function(a, b) return a.size > b.size end)
-        return out
+        local out = {}
+        for class = st.top, 0, -1 do
+            local list = buckets[class]
+            if list then for i = 1, #list do out[#out + 1] = list[i] end end
+        end
+        st.list, st.buckets = out, nil
+        return true
+    end
+    function self.regions()
+        local st = self.sweep_new()
+        self.sweep_step(st, nil)
+        return st.list
     end
 
     function self.address_of(text)
@@ -1264,6 +1291,19 @@ local function regions_now(max_age)
     return region_list
 end
 KITS.regions_now = regions_now
+-- 7.5: the same list, walked a little each frame (a modded game has tens of thousands of regions). A fake api
+-- without sweep_new (tests, older builds) gets the whole walk at once, as before.
+function KITS.sweep_new()
+    if api.sweep_new then return api.sweep_new() end
+    return { list = api.regions(), done = true }
+end
+function KITS.sweep_step(st, deadline)
+    if st.done then return true end
+    return api.sweep_step(st, deadline)
+end
+function KITS.sweep_done(list)
+    region_list, region_at = list, api.now()
+end
 local band = (function() local ok, b = pcall(require, 'bit'); return ok and b and b.band end)()
 
 local function panel_open() return state.ui and state.ui.open end
@@ -1278,7 +1318,12 @@ function KITS.find_start(now, near)
         if not any then return end
         W.bm = bm
     end
-    local regions = regions_now(30)
+    if region_list and now - region_at < 30 then return KITS.find_begin(region_list, near, now) end
+    W.state, W.sweep, W.sweep_near, W.t0 = 'sweeping', KITS.sweep_new(), near, now
+end
+
+function KITS.find_begin(regions, near, now)
+    local W = KITS.wear
     if near and #near > 0 then
         local pick = {}
         for _, r in ipairs(regions) do
@@ -1337,6 +1382,13 @@ function KITS.wear_tick(now)
             elseif W.full < WEAR_FULL_MAX and panel_open() then
                 KITS.find_start(now)                         -- later passes: only for a panel that needs it
             end
+        end
+    elseif W.state == 'sweeping' then
+        if KITS.sweep_step(W.sweep, api.now() + WEAR_BUDGET) then
+            local list, near = W.sweep.list, W.sweep_near
+            W.sweep, W.sweep_near = nil, nil
+            KITS.sweep_done(list)
+            KITS.find_begin(list, near, now)
         end
     elseif W.state == 'scanning' then
         local deadline = api.now() + WEAR_BUDGET
@@ -1676,7 +1728,12 @@ local function begin_round()
     seen_blocks = {}
     found_lo, found_hi = nil, nil
     state.rounds = state.rounds + 1
-    for _, region in ipairs(KITS.regions_now(0)) do
+    KITS.sweeping = KITS.sweep_new()                -- 7.5: the lists below are filled when the walk is done (scan_step)
+end
+
+function KITS.sweep_finish_round(list)
+    KITS.sweep_done(list)
+    for _, region in ipairs(list) do
         if region.allocation_base and region.size >= PROBE_MIN_ALLOC then
             probe.regions[#probe.regions + 1] = region
         end
@@ -1719,6 +1776,12 @@ end
 
 local function scan_step()
     local deadline = api.now() + frame_budget()
+    if KITS.sweeping then
+        if not KITS.sweep_step(KITS.sweeping, deadline) then return false end
+        local list = KITS.sweeping.list
+        KITS.sweeping = nil
+        KITS.sweep_finish_round(list)
+    end
     while not probe.done and probe.index <= #probe.regions do
         local region = probe.regions[probe.index]
         probe.index = probe.index + 1
