@@ -1,11 +1,10 @@
 # Changelog
 
-## 7.4.2 (2026-10-18)
-All editions:
-- **Smaller steps for the armor scans, so no frame carries a big read.** The armor search and the "wearing" detection used to read memory 256 KB at a time (the first look at each allocation read 128 KB in one go); a single read of that size could take several milliseconds on its own, whatever the per-frame budget said. Both now read 64 KB at a time, and the wearing pass takes 0.6 ms per frame instead of 1 ms. The scans finish a little later in wall time; nothing they find changes.
 ## 7.4.1 (2026-10-18)
 All editions:
 - **No more one-frame stall when the memory scan starts.** Finding the armor data walks the game's whole address space, and a heavily modded game has tens of thousands of memory regions; the walk (and a sort of the result) ran in a single frame. It now runs a little each frame inside the same time budget as the scan itself, and the sort is replaced by size classes. Same results, no spike.
+- **Smaller steps for the armor scans.** The armor search and the "wearing" detection used to read memory 256 KB at a time (the first look at each allocation read 128 KB in one go); a single read that size could take several milliseconds on its own, whatever the per-frame budget said. Both now read 64 KB at a time, and the wearing pass takes 0.6 ms per frame instead of 1 ms. The scans finish a little later in wall time; nothing they find changes.
+
 ## 7.4 (2026-10-17)
 All editions:
 - **Rebind any key.** Keys tab: click **Rebind** next to the panel key or the quick-swap key, then press the key you want, with Ctrl, Alt and/or Shift held if you like (Esc cancels). Letters, digits, Insert, Delete, Home, End, PageUp and PageDown need Ctrl or Alt held, so a bare key can't fire while you play; F1 to F12 work alone as before. The F1 to F12 buttons are still there. Full edition: the Stratagems tab has its own **Rebind** for the stratagem quick-swap key (Ctrl or Alt only: Shift is how that key goes back). Ctrl+Z, Ctrl+F and Ctrl+0 are the panel's own shortcuts and can't be used.
