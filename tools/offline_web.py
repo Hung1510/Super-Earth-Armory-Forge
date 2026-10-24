@@ -5,7 +5,10 @@
 It only makes the page that writes a preset / mod zip for you. Nothing here touches the game's files.
 Run `python tools/picker.py export-web` first so docs/data.json is current.
 """
-import argparse, json, os, re, zipfile
+import argparse
+import json
+import os
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.join(os.path.dirname(HERE), "docs")
