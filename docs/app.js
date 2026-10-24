@@ -648,7 +648,7 @@
   // ---------------------------------------------------------------- start
   async function start() {
     try {
-      data = await (await fetch("data.json")).json();
+      data = window.ARMORY_DATA || await (await fetch("data.json")).json();   // data.js is only in the offline zip (file:// cannot fetch)
     } catch (e) {
       $("profileBody").innerHTML = `<div class="empty">Could not load data.json. If you opened this file directly, serve the folder instead (GitHub Pages or <code>python -m http.server</code>).</div>`;
       return;
