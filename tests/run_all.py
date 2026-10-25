@@ -51,6 +51,7 @@ SUITES = [
     ("test_armor_edition.py", "Armor Only edition: no stratagem presets"),
     ("test_swap_edition.py", "Passive Swap edition (Nexus build)"),
     ("test_release.py", "release zips, blank install, old saves"),
+    ("test_offline_editor.py", "offline loadout.ini editor: mod parser, install/restore backup, standalone zip"),
     ("test_web_parity.js", "web builder output is byte-identical to Python"),
     ("test_web_i18n.js", "web builder in Simplified Chinese: names, wording, hints"),
 ]

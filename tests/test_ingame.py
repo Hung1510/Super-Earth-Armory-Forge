@@ -229,7 +229,7 @@ patched = dict(picker.CATALOG)
 name, rows, stats = patched[7]
 patched[7] = (name, [(0x2875F44A, 1, 3.0)] + list(rows[1:]), stats)            # balance change: stims +3
 patched[0] = ("none", [(0, 0, 0.0)], [])                                         # the game's empty entry
-patched[42] = ("Brand New", [(0xDEADBEEF, 2, 1.25), (0x2875F44A, 1, 1.0)], [(18, 0.0, 1.1)])  # new passive
+patched[43] = ("Brand New", [(0xDEADBEEF, 2, 1.25), (0x2875F44A, 1, 1.0)], [(18, 0.0, 1.1)])  # new passive
 del patched[5]                                                                  # removed passive
 appdata = tempfile.mkdtemp()
 g6 = FakeGame(path, appdata=appdata, game=patched)
@@ -237,7 +237,7 @@ g6.tick(420)
 dump = glob.glob(os.path.join(appdata, "**", "passives-dump.txt"), recursive=True)[0]
 code, out = check_dump(dump)
 check(code == 1, "check-dump: a patched game reports differences")
-check("NEW       perk 42" in out and "(0xDEADBEEF, 2, 1.25)" in out and "(18, 0.0, 1.1)" in out,
+check("NEW       perk 43" in out and "(0xDEADBEEF, 2, 1.25)" in out and "(18, 0.0, 1.1)" in out,
       "check-dump: new passive printed as a ready-to-paste CATALOG line")
 check("CHANGED   perk 7 Med-Kit" in out and "(0x2875F44A, 1, 3.0)" in out, "check-dump: balance change found")
 check("MISSING   perk 5" in out, "check-dump: removed passive found")

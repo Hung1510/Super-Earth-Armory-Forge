@@ -245,6 +245,10 @@
     "SR-64 Cinderblock"
    ]
   },
+  "Stationary Shroud": {
+   "desc": "35% less aiming sway; 15% quieter movement; harder to detect when still and crouched or prone.",
+   "armors": []
+  },
   "Supplemental Adrenaline": {
    "desc": "Taking damage restores stamina; higher armor rating.",
    "armors": [

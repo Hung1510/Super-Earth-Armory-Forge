@@ -86,7 +86,7 @@ LANGS.zh = {
         ['How it works']               = '怎么用',
         ['Forge your armor']           = '打造你的护甲',
         ['Pick the armor passive you wear (for example Med-Kit),'] = '先选中你所穿护甲的被动（例如医疗包），',
-        ['then tick any of the 31 passives to stack onto it and'] = '再勾选 31 个被动中的任意几个叠加上去，',
+        ['then tick any of the 32 passives to stack onto it and'] = '再勾选 32 个被动中的任意几个叠加上去，',
         ['change their values. Everything applies at once.'] = '并改动它们的数值。一切即时生效。',
         -- 堆叠页
         ['Choose passives']            = '选择被动',
@@ -508,6 +508,7 @@ LANGS.zh = {
         ['Oxygenator']                         = '供氧器',
         ['Kinetic Displacement Mitigation']    = '动能位移减缓',
         ['Blunt-Force Mitigation']             = '钝击创伤缓和',
+        ['Stationary Shroud']                  = '静止隐匿',
         ['True Grit']                          = '坚韧不拔',
         ['Standard Issue']                     = '标准配发',
         ['Every armor']                        = '所有护甲',

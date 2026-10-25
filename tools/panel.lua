@@ -2752,7 +2752,7 @@ local function draw(width, height)
             text('then choose which of the game\'s passives it should', RX, TOP + 94, 15, C.TEXT, RIW)
             text('have instead. The values are the game\'s own.', RX, TOP + 116, 15, C.TEXT, RIW)
         else
-        text('then tick any of the 31 passives to stack onto it and', RX, TOP + 94, 15, C.TEXT, RIW)
+        text('then tick any of the 32 passives to stack onto it and', RX, TOP + 94, 15, C.TEXT, RIW)
         text('change their values. Everything applies at once.', RX, TOP + 116, 15, C.TEXT, RIW)
         end
         local bx = RX

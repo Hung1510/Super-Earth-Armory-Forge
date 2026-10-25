@@ -8,7 +8,7 @@
 <a href="https://ayakamods.com/mods/super-earth-armory-forge.4359/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FHung1510%2F996afff3a389ecbb7e77691ec94cab6a%2Fraw%2Fayakamods-rating.json" alt="rating"></a>
 <a href="https://www.nexusmods.com/helldivers2/mods/16789"><img src="https://img.shields.io/badge/Nexus%20Mods-Lite%20edition-ffe710?labelColor=0b0c0d" alt="Nexus Mods"></a>
 <a href="https://github.com/Hung1510/Super-Earth-Armory-Forge/releases"><img src="https://img.shields.io/github/downloads/Hung1510/Super-Earth-Armory-Forge/total?label=GitHub%20downloads&color=ffe710&labelColor=0b0c0d&cacheSeconds=3600" alt="GitHub downloads"></a>
-<a href="TESTING.md"><img src="https://img.shields.io/badge/armor%20passives-31%2F31-ffe710?labelColor=0b0c0d" alt="passives"></a>
+<a href="TESTING.md"><img src="https://img.shields.io/badge/armor%20passives-32%2F32-ffe710?labelColor=0b0c0d" alt="passives"></a>
 <a href="#languages"><img src="https://img.shields.io/badge/languages-English%20%C2%B7%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87%20%C2%B7%20%E6%97%A5%E6%9C%AC%E8%AA%9E-ffe710?labelColor=0b0c0d" alt="English, 简体中文, 日本語"></a>
 <a href="https://ko-fi.com/phamtrangiahung"><img src="https://img.shields.io/badge/Ko--fi-support%20the%20mod-ffe710?logo=ko-fi&logoColor=ffe710&labelColor=0b0c0d" alt="Support on Ko-fi"></a>
 </p>
@@ -29,7 +29,7 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 - **Requires:** [Bingus Shared Loader](https://ayakamods.com/mods/bingus-shared-loader.3861/)
 - **Single-player / private lobbies only.** Don't use it in public matchmaking.
 - Download: [AyakaMods](https://ayakamods.com/mods/super-earth-armory-forge.4359/) · [GitHub Releases](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest) (full edition) · [Nexus Mods: Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789) (Passive Swap edition)
-- **Editions:** the **full edition** (`Super-Earth-Armory-Forge-v7.5.0.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v7.5.0.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other. The **Armor Only edition** (`Super-Earth-Armory-Forge-Armor-Only-v7.5.0.zip`) is the full edition without the stratagem presets: nothing of them is loaded or run.
+- **Editions:** the **full edition** (`Super-Earth-Armory-Forge-v7.6.0.zip`, the version is always in the name) stacks passives and edits values. The **Passive Swap edition** (`Super-Earth-Armory-Forge-Passive-Swap-v7.6.0.zip`) gives each armor one other passive at the game's own values, with no stacking and no value editing. Install one or the other. The **Armor Only edition** (`Super-Earth-Armory-Forge-Armor-Only-v7.6.0.zip`) is the full edition without the stratagem presets: nothing of them is loaded or run.
 - **Support:** the mod is free and always will be. If it's worth a coffee to you, **[tip on Ko-fi](https://ko-fi.com/phamtrangiahung)**. I'd really appreciate it, and it helps me keep updating the mod.
 
 ## Ways to use it
@@ -39,12 +39,27 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 | Build in game (most people) | Download **[Super-Earth-Armory-Forge-v…zip](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest)**, add it to your mod manager (there are no options to pick), start the game, press **F7** |
 | A ready-made build | Same zip, then F7, then **Presets**: *Kitchen Sink, Tank, Stealth, Survivor, Demolitionist, Gunner* |
 | Plan a build before playing | **[Web builder](https://hung1510.github.io/Super-Earth-Armory-Forge/)**, then *Download mod (.zip)* |
+| Edit `loadout.ini` as text, offline | **Offline Editor** download, double-click `Run-Offline-Editor.bat` ([how](#offline-editor)) |
 | Scripting / version control | `python tools\picker.py build loadout.ini --zip "My Stack.zip"` (below) |
 
 Then:
 1. Remove Passive Picker v3 if you have it. Passive Picker v4 is this mod under its old name; the update replaces it and keeps your saved builds.
 2. Deploy, **fully restart the game**, and wear armor with the passive your stack is on (for example Med-Kit; use Armor Transmog if you want a different look).
 3. Check `%LOCALAPPDATA%\CowboyBingus\Helldivers2\Logs\ArmoryForge-STATUS.txt`. It should say `OK - perk stacked` once something is stacked; a fresh install shows a *Press F7* card when the game is ready.
+
+## Offline editor
+
+`Super-Earth-Armory-Forge-Offline-Editor-v7.6.0.zip` (a separate download on the release page, also on AyakaMods) is a small Windows window for editing `loadout.ini` as text. It changes that one file and nothing else: not the game, not its archives, not other mods. It is optional; the F7 panel and the web builder edit the same file.
+
+1. Install **Python 3.10 or newer** from python.org and tick *Add python.exe to PATH* (the installer includes Tk, which the editor uses). Check with `python --version` in Command Prompt.
+2. Extract the zip somewhere you can write (Documents is fine).
+3. Double-click `Run-Offline-Editor.bat`. If the window closes at once, open Command Prompt in the folder and run `python offline_editor.py`; it prints the error.
+4. Open your current `loadout.ini` (the editor offers to), or press **New**. Double-click a passive in the list to add it at the cursor.
+5. **Validate** runs the mod's own parser, so a pass means the mod accepts the file and an error names the section and line it rejects.
+6. **Install config** backs up the old file, then saves to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\loadout.ini`. A running game reloads it within a couple of seconds; no restart.
+7. **Restore config backup** puts the previous file back (the one you had before the restore is kept as `loadout.ini.before-restore`).
+
+Armory Forge itself and Bingus Shared Loader must already be installed as usual. From a clone: `python tools/offline_editor.py` (window), `python tools/offline_editor.py --check my.ini` (validate without a window), `python tools/offline_editor.py --zip out.zip` (the download).
 
 ## Languages
 
@@ -144,7 +159,7 @@ pip install lupa                                   # optional: Lua syntax check
 python tools\picker.py list                        # every passive, effect, default
 python tools\picker.py build loadout.ini           # preview
 python tools\picker.py build loadout.ini --zip "My Stack.zip"
-python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v7.5.0.zip   # the release zip (CI names it after the tag)
+python tools\picker.py release --zip dist\Super-Earth-Armory-Forge-v7.6.0.zip   # the release zip (CI names it after the tag)
 ```
 
 The web builder can import and export the same `loadout.ini`.
@@ -222,6 +237,7 @@ tools/release_notes.py     release notes for a tag, from CHANGELOG.md (release w
 docs/ARCHITECTURE.md       how it all works: engine, safety rules, panel, editions, tests
 pyproject.toml             lint settings (ruff)
 tests/test_web_parity.js   web builder output must be byte-identical to Python
+tools/offline_editor.py     loadout.ini editor window + --check + the standalone download zip
 tools/ayakamods_stats.py   reads AyakaMods downloads/views/rating into shields.io badge files
 tools/update_badges_local.ps1  runs it through the installed Edge on a Windows PC (passes Cloudflare) and pushes to the badges Gist
 TESTING.md                 in-game verification status per effect
@@ -233,7 +249,7 @@ Nothing to do for new armor that uses an existing passive; stacks are per passiv
 
 On patch day:
 1. Start the game once with the mod. Check `ArmoryForge-STATUS.txt`:
-   - `found=31 of 31`: all good.
+   - `found=32 of 32`: all good.
    - `NOT in the catalog=N`: new passives exist.
    - `found=0`: the game's data layout changed. The mod safely does nothing; disable it until it's updated.
 2. The mod has written every armor passive the game has, with the game's own values, to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\passives-dump.txt`. Compare it with the catalog:

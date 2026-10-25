@@ -30,6 +30,7 @@ jobs:
       - run: python tools/picker.py release --edition armor --zip "dist/Super-Earth-Armory-Forge-Armor-Only-${{ github.ref_name }}.zip"
       - run: python tools/picker.py release --hellforge --zip "dist/Super-Earth-Armory-Forge-HellForge-${{ github.ref_name }}.zip"
       - run: python tools/picker.py pack --zip "dist/Super-Earth-Armory-Forge-Armor-Roles-${{ github.ref_name }}.zip"
+      - run: python tools/offline_editor.py --zip "dist/Super-Earth-Armory-Forge-Offline-Editor-${{ github.ref_name }}.zip"
       - run: python tools/release_notes.py "${{ github.ref_name }}" > dist/notes.md
       - uses: softprops/action-gh-release@v2
         with:
@@ -40,3 +41,4 @@ jobs:
             dist/Super-Earth-Armory-Forge-Armor-Only-${{ github.ref_name }}.zip
             dist/Super-Earth-Armory-Forge-HellForge-${{ github.ref_name }}.zip
             dist/Super-Earth-Armory-Forge-Armor-Roles-${{ github.ref_name }}.zip
+            dist/Super-Earth-Armory-Forge-Offline-Editor-${{ github.ref_name }}.zip

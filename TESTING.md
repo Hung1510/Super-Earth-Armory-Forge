@@ -76,6 +76,7 @@ Status: ✅ confirmed · ⚠️ works but name/meaning wrong · ❌ no effect ·
 | `ergonomics` | ❔ | Peak Physique (30), True Grit (20) | Compare aim-sway/turn speed with a heavy weapon. |
 | `melee_flag` | ❔ | Peak Physique (1), Rock-Solid (1) | Unknown flag from Peak Physique / Rock-Solid. Note anything that changes. |
 | `gas_damage_taken` | ❔ | Advanced Filtration (0.2), Concussive Padding, Hazmat (0.75) | Stand in a gas cloud for 2 s; compare damage. |
+| `aim_sway` / `aim_sway_b` / `aim_sway_c` | ❔ | Stationary Shroud (0.65, three rows together) | Aim a weapon and watch the sway; the wiki says 35% less. Values are from the wiki, not read from the game. |
 | `flinch` | ❔ | Unflinching (0) | Get shot while aiming; the crosshair should barely move. |
 | `stat_flinch` | ❔ | Unflinching (0.05) | Stat-list copy of flinch. Test with and without to see if both are needed. |
 | `elemental_damage_taken` | ❔ | Acclimated (0.5), Desert Stormer (0.6) | Compare fire/gas/acid/arc damage together. |

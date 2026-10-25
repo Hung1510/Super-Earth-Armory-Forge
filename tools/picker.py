@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.5.0"
+VERSION = "7.6.0"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -92,6 +92,9 @@ EFFECTS = {
     0xF6D67313: ("move_speed_b", "mul; walk or run speed ?"),
     0x6938BD56: ("slide_flag", "set; slide-related ?"),
     0x35F17BEC: ("support_reload_speed", "mul; 1.3 = +30%"),
+    0x33235131: ("aim_sway", "mul; 0.65 = -35% (written to three rows together; exact effect ?)"),
+    0xF0B70521: ("aim_sway_b", "mul; same as aim_sway, second row ?"),
+    0x0FF508EB: ("aim_sway_c", "mul; same as aim_sway, third row ?"),
 }
 STAT_EFFECTS = {
     11: ("stat_flinch", "stat; 0.05 = -95%"),
@@ -147,6 +150,10 @@ CATALOG = {
     40: ("Blunt-Force Mitigation", [(0x11A3C04C, 2, 0.7), (0x25A59469, 2, 0.7),
                                     (0xAFAE3B47, 1, 0.5)], []),
     41: ("True Grit", [(0x35F17BEC, 2, 1.3), (0xC8CCB6FA, 1, 20.0)], [(14, 0.0, 1.3)]),
+    # 42: wiki values (35% less aiming sway, 15% quieter). The game also gives it a concealment
+    # modifier (0x776A91FF, still and crouched / prone) whose value is not known yet, so it is left out.
+    42: ("Stationary Shroud", [(0x33235131, 2, 0.65), (0xF0B70521, 2, 0.65), (0x0FF508EB, 2, 0.65),
+                               (0xAF8B7112, 2, 0.85)], []),
 }
 ALIASES = {"rocksolid": 33, "supplementaryadrenaline": 34, "medkit": 7}
 

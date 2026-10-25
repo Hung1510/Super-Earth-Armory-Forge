@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.6.0 (2026-10-25)
+**Offline Editor (optional download):** `Super-Earth-Armory-Forge-Offline-Editor-v7.6.0.zip`, a small Windows window for editing `loadout.ini` as text, with no internet needed. **Validate** uses the mod's own parser, so it names the exact section and line the mod would reject; double-click a passive in the list to add it; **Install config** backs up the old file and saves to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\loadout.ini` (a running game reloads it within a couple of seconds); **Restore config backup** brings the previous file back. It needs Python 3.10 or newer (python.org, with Tk). It edits that one text file only: it does not touch the game, its archives or any other mod. Steps are in the README ("Offline editor"). `python tools/offline_editor.py --check my.ini` validates without a window.
+
+All editions:
+- **New armor passive: Stationary Shroud** (passive 42, added by the game's latest patch). It is in the passive list, the stacks, the presets' `.ini` format, the web builder and the Chinese names. Its values come from the wiki (35% less aiming sway, 15% quieter movement), not from a game dump: the game also gives it a concealment-when-still-and-crouched value that is not in the list yet, because its number is not known. Japanese shows the English name until the game's own Japanese text is read. If you see a value that looks wrong, send `ArmoryForge-STATUS.txt` and `passives-dump.txt`. The panel text now says 32 passives.
+- Builds made from your own `loadout.ini` list the new passive, so their saved edits start fresh once; the release zip is a blank build and keeps your saves.
+
 ## 7.5.0 (2026-10-25)
 All editions:
 - **HellForge edition.** New zip `Super-Earth-Armory-Forge-HellForge-v7.5.0.zip`: the full edition in the layout HellForge mods use (a `manifest.json` with an option that includes `options/armory_forge/`, and the same patch archive inside). It is the same mod and the same patch as the plain zip, packaged the way HellForge lists mods, and it needs Bingus Shared Loader v20 or newer like the other HellForge mods. Not yet tested in HellForge itself: if the mod does not start there, send `ArmoryForge-STATUS.txt` and the loader log.

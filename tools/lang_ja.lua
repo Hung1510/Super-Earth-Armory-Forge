@@ -88,7 +88,7 @@ LANGS.ja = {
         ['How it works']               = '使い方',
         ['Forge your armor']           = 'アーマーを鍛造',
         ['Pick the armor passive you wear (for example Med-Kit),'] = '着ているアーマーのパッシブ（例：医療キット）を選び、',
-        ['then tick any of the 31 passives to stack onto it and'] = '31種類のパッシブから好きなものを選んで重ね、',
+        ['then tick any of the 32 passives to stack onto it and'] = '32種類のパッシブから好きなものを選んで重ね、',
         ['change their values. Everything applies at once.'] = '数値を変えましょう。すべてすぐに反映されます。',
         -- スタック画面
         ['Choose passives']            = 'パッシブを選択',
@@ -502,6 +502,7 @@ LANGS.ja = {
         ['Oxygenator'] = '酸素供給器',
         ['Kinetic Displacement Mitigation'] = '移動によるズレ軽減',
         ['Blunt-Force Mitigation'] = '鈍的ダメージ緩和',
+        ['Stationary Shroud'] = 'Stationary Shroud',   -- the game's Japanese name is not read yet: English until then
         ['True Grit'] = '真の根性',
         ['Standard Issue'] = '標準装備',
         ['Every armor'] = 'すべてのアーマー',
