@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.4.1"
+VERSION = "7.5.0"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -774,6 +774,7 @@ TYPE = 0xA14E8DFA2CD117E2
 ENVELOPE_VERSION = 2
 FAMILY = "9ba626afa44a3aa3"
 ARCHIVE_NAME = FAMILY + ".patch_0"
+HELLFORGE_DIR = "options/armory_forge"   # --hellforge: the folder the manifest's option includes
 GUID_NS = uuid.UUID("6f9619ff-8b86-d011-b42d-00c04fc964ff")
 _M = (1 << 64) - 1
 _MIX = 0xC6A4A7935BD1E995
@@ -1014,7 +1015,8 @@ def cmd_release(args):
     presets = [] if swap else builtin_presets()
     for name, _ in presets:
         print("  preset in the panel: %s" % name)
-    guid = str(uuid.uuid5(GUID_NS, MOD_ID))
+    hellforge = bool(getattr(args, "hellforge", False))
+    guid = str(uuid.uuid5(GUID_NS, MOD_ID + ("/hellforge" if hellforge else "")))
     manifest = {
         # the version in the name: mod managers list it, so players see which one they have
         "Version": 1, "Guid": guid, "Name": "%s v%s" % (TITLE, VERSION),
@@ -1033,23 +1035,32 @@ def cmd_release(args):
         manifest["Description"] = ("v%s, Armor Only edition. Press %s in game: tick any armor passives, change their values live, "
                                    "save and swap loadouts (%s). The full edition without the stratagem presets, so nothing of them runs. %s"
                                    % (VERSION, DEFAULT_HOTKEY, DEFAULT_SWAP_HOTKEY, CREDIT))
+    if hellforge:
+        # HellForge layout (same as Enemy Balance / Gameplay Systems - HellForge): every option lists the
+        # folders it includes, and each folder holds the patch archive. One always-on option here.
+        manifest["Name"] += " - HellForge"
+        manifest["Description"] = "HellForge edition. Requires Bingus Shared Loader v20 or newer. " + manifest["Description"]
+        manifest["Options"] = [{"Name": "Armory Forge: armor passive editor",
+                                "Description": "Press %s in game to open the armory." % DEFAULT_HOTKEY,
+                                "Include": [HELLFORGE_DIR]}]
     icon = os.path.join(root, "docs", "icon.png")
     if os.path.exists(icon):
         manifest["IconPath"] = "icon.png"
     extras = ["README.md", "CREDITS.txt", "CHANGELOG.md", "TESTING.md", "loadout.ini"]
     extras += ["tools/" + f for f in RELEASE_TOOLS]
-    if swap or armor:
-        extras = ["CREDITS.txt"]
-    trees = [] if (swap or armor) else ["examples", "presets"]
+    if swap or armor or hellforge:
+        extras = ["CREDITS.txt"] + (["README.md", "CHANGELOG.md"] if hellforge else [])
+    trees = [] if (swap or armor or hellforge) else ["examples", "presets"]
+    prefix = HELLFORGE_DIR + "/" if hellforge else ""
     archive = archive_for(full)
     os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
     with zipfile.ZipFile(args.zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
         _zip_write(z, "manifest.json", (json.dumps(manifest, indent=2) + "\n").encode())
         if os.path.exists(icon):
             _zip_write(z, "icon.png", open(icon, "rb").read())
-        _zip_write(z, ARCHIVE_NAME, archive)
-        _zip_write(z, ARCHIVE_NAME + ".stream", b"")
-        _zip_write(z, ARCHIVE_NAME + ".gpu_resources", b"")
+        _zip_write(z, prefix + ARCHIVE_NAME, archive)
+        _zip_write(z, prefix + ARCHIVE_NAME + ".stream", b"")
+        _zip_write(z, prefix + ARCHIVE_NAME + ".gpu_resources", b"")
         for f in extras:
             fp = os.path.join(root, f)
             if os.path.exists(fp):
@@ -1067,8 +1078,12 @@ def cmd_release(args):
                     fp = os.path.join(dirpath, f)
                     _zip_write(z, os.path.relpath(fp, root).replace(os.sep, "/"),
                                open(fp, "rb").read())
+    if hellforge:
+        edition_name = "HellForge layout, " + ("Passive Swap" if swap else "Armor Only" if armor else "full") + " edition"
+    else:
+        edition_name = "Passive Swap edition" if swap else "Armor Only edition" if armor else "full edition"
     print("Wrote release     : %s  (%s, blank build, %d presets in the panel, guid %s)"
-          % (args.zip, "Passive Swap edition" if swap else "Armor Only edition" if armor else "full edition", len(presets), guid))
+          % (args.zip, edition_name, len(presets), guid))
     return 0
 
 
@@ -1456,6 +1471,8 @@ def main(argv=None):
     r = sub.add_parser("release", help="one zip with every preset as a pick-one option")
     r.add_argument("--presets", default=os.path.join(os.path.dirname(HERE), "presets"))
     r.add_argument("--zip", required=True)
+    r.add_argument("--hellforge", action="store_true",
+                   help="HellForge zip layout: manifest with Options/Include and the archive under options/armory_forge/")
     r.add_argument("--edition", choices=["full", "swap", "armor"], default="full",
                    help="swap = Passive Swap edition: one game passive per armor, game values, no stacking; armor = the full edition without the stratagem presets")
     r.set_defaults(func=cmd_release)

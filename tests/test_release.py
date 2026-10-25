@@ -57,6 +57,19 @@ arc = z.read(picker.ARCHIVE_NAME)
 settings, _ = picker.load_config_text("[settings]\nname = %s\n[profile: Med-Kit]\n" % picker.TITLE)
 full = picker.compile_loadout(settings, [], blank=True)
 check(picker.archive_for(full) == arc, "the zipped patch is the blank build")
+
+# HellForge layout: manifest with an option, the same patch under options/armory_forge/
+hf = tempfile.mktemp(suffix=".zip")
+check(picker.main(["release", "--hellforge", "--zip", hf]) == 0, "picker.py release --hellforge builds")
+hz = zipfile.ZipFile(hf)
+hman, hnames = json.loads(hz.read("manifest.json")), hz.namelist()
+check(hman["Options"][0]["Include"] == [picker.HELLFORGE_DIR] and hman["Name"].endswith(" - HellForge")
+      and "Bingus Shared Loader v20" in hman["Description"], "HellForge manifest: one option, includes the folder, names the loader")
+check(all(picker.HELLFORGE_DIR + "/" + picker.ARCHIVE_NAME + x in hnames for x in ("", ".stream", ".gpu_resources"))
+      and picker.ARCHIVE_NAME not in hnames, "HellForge zip: the patch lives under options/armory_forge/ only")
+check(hz.read(picker.HELLFORGE_DIR + "/" + picker.ARCHIVE_NAME) == z.read(picker.ARCHIVE_NAME),
+      "HellForge zip carries the same patch as the plain release")
+check(hman["Guid"] != man["Guid"], "HellForge edition has its own GUID (installs next to the plain one without clashing)")
 with open(lua_path, "w", encoding="utf-8") as f:
     f.write(full)
 

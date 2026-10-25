@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 7.5.0 (2026-10-25)
+All editions:
+- **HellForge edition.** New zip `Super-Earth-Armory-Forge-HellForge-v7.5.0.zip`: the full edition in the layout HellForge mods use (a `manifest.json` with an option that includes `options/armory_forge/`, and the same patch archive inside). It is the same mod and the same patch as the plain zip, packaged the way HellForge lists mods, and it needs Bingus Shared Loader v20 or newer like the other HellForge mods. Not yet tested in HellForge itself: if the mod does not start there, send `ArmoryForge-STATUS.txt` and the loader log.
+- **Offline web builder.** `python tools/offline_web.py` makes a zip of the web builder that opens from disk with no internet (`index.html`, double-click). It only writes a preset or mod zip; it never touches the game's files.
+
 Full and Armor Only editions:
 - **Randomize button (Presets tab), just for fun.** One click builds a whole random loadout: every armor passive gets 1 to 5 random other passives stacked on it, a random weight class (or the game's own), and about 70% of the values on its stack changed (resists 5 to 100%, other multipliers half to double, armor 0 to 150, and so on; flags are left alone). It is applied right away and saved as a preset ("Random 1", "Random 2", ...) so you can come back to it or delete it; Ctrl+Z undoes it. The Passive Swap edition has no such button (it stays at the game's own values).
 ## 7.4.1 (2026-10-18)
