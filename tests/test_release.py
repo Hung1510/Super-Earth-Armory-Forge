@@ -69,6 +69,10 @@ check(all(picker.HELLFORGE_DIR + "/" + picker.ARCHIVE_NAME + x in hnames for x i
       and picker.ARCHIVE_NAME not in hnames, "HellForge zip: the patch lives under options/armory_forge/ only")
 check(hz.read(picker.HELLFORGE_DIR + "/" + picker.ARCHIVE_NAME) == z.read(picker.ARCHIVE_NAME),
       "HellForge zip carries the same patch as the plain release")
+check(set(hman) == {"Version", "Guid", "Name", "Description", "Options"} and set(hman["Options"][0]) == {"Name", "Description", "Include"},
+      "HellForge manifest: only the keys the other HellForge mods use (no IconPath)")
+check(all(n == "manifest.json" or n.startswith(picker.HELLFORGE_DIR + "/") for n in hnames),
+      "HellForge zip: manifest.json and options/ only, nothing else at the root")
 check(hman["Guid"] != man["Guid"], "HellForge edition has its own GUID (installs next to the plain one without clashing)")
 with open(lua_path, "w", encoding="utf-8") as f:
     f.write(full)

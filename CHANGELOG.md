@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.6.1 (2026-10-28)
+**HellForge edition, rebuilt to match how Gameplay Systems and Enemy Balance ship for HellForge** (a player reported the mod "is not compatible with HellForge"):
+- The HellForge zip is now exactly `manifest.json` + `options/armory_forge/` and nothing else. Before, it also carried `icon.png`, `README.md`, `CHANGELOG.md` and `CREDITS.txt` at the root and an `IconPath` entry in the manifest, which the other HellForge mods do not have. The credits are in the manifest description. I could not run HellForge here, so this is matched to the reference, not confirmed in HellForge: if it still does not start, the next step is the status file below.
+- **The status file now says whether HellForge is present.** `ArmoryForge-STATUS.txt` has a new `HellForge:` line (detected or not, and whether its `hellforge_lua_info` export is found). It only looks, it calls nothing. If the mod fails under HellForge, send that file and `ArmoryForge.log`.
+- **Use the HellForge zip in HellForge.** The plain zip (`Super-Earth-Armory-Forge-v7.6.1.zip`) is for Arsenal and other mod managers and does not have HellForge's layout. Install Bingus Shared Loader v20 or newer at the highest priority.
+- The mod's patch, panel and editions are otherwise unchanged from 7.6.0.
+
 ## 7.6.0 (2026-10-25)
 **Offline Editor (optional download):** `Super-Earth-Armory-Forge-Offline-Editor-v7.6.0.zip`, a small Windows window for editing `loadout.ini` as text, with no internet needed. **Validate** uses the mod's own parser, so it names the exact section and line the mod would reject; double-click a passive in the list to add it; **Install config** backs up the old file and saves to `%LOCALAPPDATA%\CowboyBingus\Helldivers2\ArmoryForge\loadout.ini` (a running game reloads it within a couple of seconds); **Restore config backup** brings the previous file back. It needs Python 3.10 or newer (python.org, with Tk). It edits that one text file only: it does not touch the game, its archives or any other mod. Steps are in the README ("Offline editor"). `python tools/offline_editor.py --check my.ini` validates without a window.
 

@@ -34,7 +34,7 @@ ENGINE_FILES = [os.path.join(HERE, f) for f in ("engine.lua", "lang_zh.lua", "la
 MOD_ID = "mods/community/passive_picker_v4"
 GLOBAL = "ArmoryForge"
 TITLE = "Super Earth Armory Forge"
-VERSION = "7.6.0"
+VERSION = "7.6.1"
 # The only tool files that go in the player zip: plain-text sources of the mod and the
 # builder. Dev scripts (badge updaters, PowerShell) stay out; mod sites quarantine
 # archives that carry scripts or executables.
@@ -1051,19 +1051,19 @@ def cmd_release(args):
                                 "Description": "Press %s in game to open the armory." % DEFAULT_HOTKEY,
                                 "Include": [HELLFORGE_DIR]}]
     icon = os.path.join(root, "docs", "icon.png")
-    if os.path.exists(icon):
+    if os.path.exists(icon) and not hellforge:      # HellForge mods (Gameplay Systems, Enemy Balance) carry no icon
         manifest["IconPath"] = "icon.png"
     extras = ["README.md", "CREDITS.txt", "CHANGELOG.md", "TESTING.md", "loadout.ini"]
     extras += ["tools/" + f for f in RELEASE_TOOLS]
     if swap or armor or hellforge:
-        extras = ["CREDITS.txt"] + (["README.md", "CHANGELOG.md"] if hellforge else [])
+        extras = [] if hellforge else ["CREDITS.txt"]   # HellForge zip: manifest.json + options/ only, like the other HellForge mods
     trees = [] if (swap or armor or hellforge) else ["examples", "presets"]
     prefix = HELLFORGE_DIR + "/" if hellforge else ""
     archive = archive_for(full)
     os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
     with zipfile.ZipFile(args.zip, "w", compression=zipfile.ZIP_DEFLATED) as z:
         _zip_write(z, "manifest.json", (json.dumps(manifest, indent=2) + "\n").encode())
-        if os.path.exists(icon):
+        if os.path.exists(icon) and not hellforge:
             _zip_write(z, "icon.png", open(icon, "rb").read())
         _zip_write(z, prefix + ARCHIVE_NAME, archive)
         _zip_write(z, prefix + ARCHIVE_NAME + ".stream", b"")

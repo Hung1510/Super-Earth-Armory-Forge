@@ -184,6 +184,7 @@ local function build_api()
         'int QueryPerformanceCounter(int64_t *count);',
         'int QueryPerformanceFrequency(int64_t *frequency);',
         'void *GetModuleHandleA(const char *name);',
+        'void *GetProcAddress(void *module, const char *name);',
     }) do
         pcall(ffi.cdef, declaration)
     end
@@ -337,6 +338,15 @@ local function build_api()
         local base = kernel.GetModuleHandleA(name)
         if base == nil then return nil end
         return tonumber(ffi.cast('uintptr_t', base))
+    end
+
+    -- address of an exported function of a loaded module, or nil (reads only; calls nothing)
+    function self.export(module_name, symbol)
+        local handle = kernel.GetModuleHandleA(module_name)
+        if handle == nil then return nil end
+        local address = kernel.GetProcAddress(handle, symbol)
+        if address == nil then return nil end
+        return tonumber(ffi.cast('uintptr_t', address))
     end
 
     return self
@@ -1587,6 +1597,19 @@ local function summary()
     return table.concat(parts, '; ')
 end
 
+-- Is this game running under HellForge? Looks for its loader module and one export; calls nothing.
+function state.hellforge_line()      -- (a field, not a local: the main chunk is near LuaJIT's 200-local limit)
+    if state.hellforge_text then return state.hellforge_text end
+    local ok, text = pcall(function()
+        if not (api and api.module_base and api.export) then return 'HellForge: not checked (no Windows API)' end
+        if not api.module_base('hellforge_modloader.dll') then return 'HellForge: not detected (hellforge_modloader.dll is not loaded)' end
+        local info = api.export('hellforge_modloader.dll', 'hellforge_lua_info')
+        return 'HellForge: detected; hellforge_lua_info export ' .. (info and 'found' or 'MISSING (older or newer HellForge?)')
+    end)
+    state.hellforge_text = ok and text or ('HellForge: check failed: ' .. tostring(text))
+    return state.hellforge_text
+end
+
 write_status = function()
     local path = ensure_status_path()
     if not path then return false end
@@ -1615,6 +1638,7 @@ write_status = function()
         'profiles: ' .. summary(),
         '',
         'Bingus Shared Loader: see BingusSharedLoader.log first line for loader-vN; API N',
+        state.hellforge_line(),
         'Log: ' .. tostring(ensure_log_path() or '(log path unavailable)'),
         'Saved loadout: ' .. tostring(save_path() or '(unavailable)'),
         '',
