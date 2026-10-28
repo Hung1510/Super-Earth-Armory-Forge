@@ -1,0 +1,52 @@
+name: offline editor exe
+
+# Builds Super-Earth-Armory-Forge-Offline-Editor-<tag>.exe from tools/offline_editor.py on a Windows runner and
+# attaches it to the release. Runs by itself after the release workflow succeeds on a tag, or by hand (Actions ->
+# "offline editor exe" -> Run workflow, tag = v7.6.1) for a release that already exists.
+on:
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach to (for example v7.6.1)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  exe:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v')) }}
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.event.workflow_run.head_branch }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyinstaller
+      - name: Build the exe (one file, no console window)
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name "Super-Earth-Armory-Forge-Offline-Editor-${TAG}" \
+            --paths tools \
+            --add-data "tools/passives.json;." \
+            --add-data "tools/armor-names.json;." \
+            tools/offline_editor.py
+      - name: The exe starts and validates a file (no window)
+        shell: pwsh
+        run: |
+          python tools/picker.py init -o check.ini --force
+          # --windowed hides stdout, so judge by the exit code
+          $p = Start-Process -FilePath "dist/Super-Earth-Armory-Forge-Offline-Editor-$env:TAG.exe" -ArgumentList "--check","check.ini" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "exe --check exited with $($p.ExitCode)" }
+      - name: Attach to the release
+        shell: bash
+        run: gh release upload "$TAG" "dist/Super-Earth-Armory-Forge-Offline-Editor-${TAG}.exe" --clobber --repo "$GITHUB_REPOSITORY"

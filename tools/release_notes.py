@@ -15,11 +15,12 @@ FOOTER = """
 | File | Where it's for | What it does |
 |---|---|---|
 | `Super-Earth-Armory-Forge-v{v}.zip` | GitHub, AyakaMods | **Full edition:** stack any armor passives onto your armor and set every value, live in game (F7) |
-| `Super-Earth-Armory-Forge-Passive-Swap-v{v}.zip` | Nexus Mods ([Passive Swap - Armory Forge Lite](https://www.nexusmods.com/helldivers2/mods/16789)) | **Passive Swap edition:** give any armor one other passive at the game's own values; no stacking, no value editing |
 | `Super-Earth-Armory-Forge-Armor-Only-v{v}.zip` | GitHub, AyakaMods | **Armor Only edition:** the full edition without the stratagem presets, so nothing of them is loaded or run |
+| `Super-Earth-Armory-Forge-HellForge-v{v}.zip` | HellForge | **HellForge edition:** the full edition in the layout HellForge mods use; import this one in HellForge, not the plain zip |
 | `Super-Earth-Armory-Forge-Offline-Editor-v{v}.zip` | GitHub, AyakaMods | **Offline Editor (optional):** a Windows window to edit and validate `loadout.ini` as text; needs Python 3.10+, not part of the mod |
+| `Super-Earth-Armory-Forge-Offline-Editor-v{v}.exe` | GitHub | The same Offline Editor as one Windows program, built by GitHub from the source in this release (no Python needed) |
 
-Install one of them with Arsenal (or any HD2 mod manager); both need **Bingus Shared Loader**. Start the game and press **F7**.
+Install one edition with Arsenal (or any HD2 mod manager), or the HellForge zip in HellForge; all need **Bingus Shared Loader**. Start the game and press **F7**.
 Single-player / private lobbies only.
 """
 
