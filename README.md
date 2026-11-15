@@ -34,6 +34,8 @@ Armory Forge started as an edit of **[Modular Armor Passives / Passive Picker v3
 
 ## Ways to use it
 
+bash grab.sh  # fetch runtime deps
+
 | You want | Do this |
 |---|---|
 | Build in game (most people) | Download **[Super-Earth-Armory-Forge-v…zip](https://github.com/Hung1510/Super-Earth-Armory-Forge/releases/latest)**, add it to your mod manager (there are no options to pick), start the game, press **F7** |
